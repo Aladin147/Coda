@@ -184,6 +184,21 @@ models/
 *.bin
 *.safetensors
 *.onnx
+*.pt
+*.pth
+*.h5
+*.pkl
+*.joblib
+checkpoints/
+
+# Moshi Models and Cache
+moshi_models/
+.moshi/
+kyutai/
+.huggingface/
+transformers_cache/
+.torch/
+.nv/
 
 # Configuration overrides
 configs/local.yaml

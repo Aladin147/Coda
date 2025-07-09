@@ -1,0 +1,76 @@
+{
+  "environment": {
+    "name": "coda_2.0",
+    "python_version": "3.11",
+    "pytorch_version": "2.9.0.dev20250707+cu128",
+    "cuda_version": "12.8",
+    "created": "2025-01-09",
+    "workspace": "H:\\Coda"
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "compute_capability": "sm_120",
+    "vram_gb": 32,
+    "architecture": "Blackwell",
+    "driver_version": "576.88"
+  },
+  "paths": {
+    "workspace": "H:\\Coda",
+    "venv": "H:\\Coda\\venv",
+    "models": "H:\\Coda\\models",
+    "cache": "H:\\Coda\\cache",
+    "logs": "H:\\Coda\\logs",
+    "temp": "H:\\Coda\\temp",
+    "data": "H:\\Coda\\data",
+    "configs": "H:\\Coda\\configs",
+    "scripts": "H:\\Coda\\scripts"
+  },
+  "moshi": {
+    "model_path": "kyutai/moshiko-pytorch-bf16",
+    "cache_dir": "H:\\Coda\\models\\moshi",
+    "device": "cuda",
+    "vram_allocation": "8GB",
+    "inner_monologue_enabled": true,
+    "streaming_enabled": true,
+    "confidence_threshold": 0.7
+  },
+  "dependencies": {
+    "torch": "2.9.0.dev20250707+cu128",
+    "torchvision": "0.24.0.dev20250708+cu128",
+    "torchaudio": "2.8.0.dev20250708+cu128",
+    "moshi": "0.2.9",
+    "transformers": "4.53.1",
+    "accelerate": "1.8.1",
+    "datasets": "3.6.0",
+    "safetensors": "0.5.3",
+    "huggingface-hub": "0.33.2",
+    "sounddevice": "0.5.0",
+    "sentencepiece": "0.2.0",
+    "numpy": "2.2.6",
+    "scipy": "1.16.0",
+    "fastapi": "0.116.0",
+    "uvicorn": "0.35.0",
+    "websockets": "15.0.1",
+    "pydantic": "2.11.7",
+    "pytest": "8.4.1",
+    "black": "25.1.0",
+    "mypy": "1.16.1"
+  },
+  "features": {
+    "rtx_5090_support": true,
+    "blackwell_architecture": true,
+    "moshi_integration": true,
+    "real_time_streaming": true,
+    "inner_monologue": true,
+    "conversation_state": true,
+    "websocket_support": true,
+    "vram_management": true,
+    "performance_monitoring": true
+  },
+  "notes": {
+    "pytorch_compatibility": "Using PyTorch nightly build for RTX 5090 Blackwell support",
+    "moshi_conflict": "Moshi requires torch<2.8 but RTX 5090 needs torch>=2.9.0.dev - resolved by manual override",
+    "environment_isolation": "All dependencies contained in workspace venv directory",
+    "model_storage": "Models stored locally in workspace to avoid system pollution"
+  }
+}

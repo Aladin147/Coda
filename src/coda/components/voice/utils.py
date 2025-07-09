@@ -406,7 +406,15 @@ class LatencyTracker:
         
         self.start_time = None
         return latency_ms
-    
+
+    def record_latency(self, latency_ms: float) -> None:
+        """Record a latency measurement."""
+        self.measurements.append(latency_ms)
+
+        # Keep only recent measurements
+        if len(self.measurements) > self.max_measurements:
+            self.measurements = self.measurements[-self.max_measurements:]
+
     def get_stats(self) -> Dict[str, float]:
         """Get latency statistics."""
         if not self.measurements:
@@ -447,6 +455,31 @@ class LatencyContext:
     def get_latency(self) -> float:
         """Get measured latency."""
         return self.latency_ms
+
+
+class LatencyContext:
+    """Context manager for tracking latency."""
+
+    def __init__(self, tracker: LatencyTracker):
+        """Initialize latency context."""
+        self.tracker = tracker
+        self.start_time = None
+        self.latency = None
+
+    def __enter__(self):
+        """Enter context and start timing."""
+        self.start_time = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context and record latency."""
+        if self.start_time is not None:
+            self.latency = (time.time() - self.start_time) * 1000  # Convert to ms
+            self.tracker.record_latency(self.latency)
+
+    def get_latency(self) -> float:
+        """Get the recorded latency."""
+        return self.latency or 0.0
 
 
 def latency_tracker(name: str) -> LatencyTracker:

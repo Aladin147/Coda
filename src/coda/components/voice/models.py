@@ -69,7 +69,7 @@ class MoshiConfig(BaseModel):
     """Kyutai Moshi configuration."""
     model_config = ConfigDict(extra="forbid")
     
-    model_path: str = Field(default="kyutai/moshika-pytorch-bf16", description="Moshi model path")
+    model_path: Optional[str] = Field(default="kyutai/moshiko-pytorch-bf16", description="Moshi model path")
     device: str = Field(default="cuda", description="Device for inference")
     optimization: str = Field(default="bf16", description="Model optimization level")
     max_conversation_length: int = Field(default=300, description="Max conversation length in seconds")

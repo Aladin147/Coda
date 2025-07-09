@@ -19,6 +19,8 @@ from enum import Enum
 import threading
 import psutil
 
+from .models import VoiceConfig
+
 try:
     import pynvml
     NVML_AVAILABLE = True
