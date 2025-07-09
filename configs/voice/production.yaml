@@ -1,0 +1,46 @@
+audio:
+  auto_gain_control: true
+  bit_depth: 16
+  channels: 1
+  chunk_size: 1024
+  echo_cancellation: true
+  format: !!python/object/apply:src.coda.components.voice.models.AudioFormat
+  - wav
+  noise_reduction: true
+  sample_rate: 24000
+  silence_duration_ms: 800
+  vad_enabled: true
+  vad_threshold: 0.5
+conversation_mode: !!python/object/apply:src.coda.components.voice.models.ConversationMode
+- full_duplex
+dynamic_allocation: true
+enable_traditional_pipeline: false
+external_llm:
+  context_window: 8192
+  fallback_enabled: true
+  model: llama3.1:70b-instruct-q4_K_M
+  parallel_processing: true
+  provider: ollama
+  reasoning_mode: enhanced
+  temperature: 0.7
+  vram_allocation: 20GB
+fallback_tts_model: xtts_v2
+fallback_whisper_model: large-v3
+memory_integration_enabled: true
+mode: !!python/object/apply:src.coda.components.voice.models.VoiceProcessingMode
+- hybrid
+moshi:
+  device: cuda
+  enable_streaming: true
+  external_llm_enabled: true
+  inner_monologue_enabled: true
+  max_conversation_length: 300
+  model_path: kyutai/moshika-pytorch-bf16
+  optimization: bf16
+  target_latency_ms: 200
+  vram_allocation: 8GB
+personality_integration_enabled: true
+reserved_system: 4GB
+tools_integration_enabled: true
+total_vram: 32GB
+websocket_events_enabled: true

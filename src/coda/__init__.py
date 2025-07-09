@@ -9,16 +9,45 @@ __author__ = "Coda Development Team"
 __email__ = "dev@coda-assistant.com"
 __description__ = "Core Operations & Digital Assistant - Next-generation local-first voice assistant"
 
-# Core imports
-from .core.assistant import CodaAssistant
-from .core.config import Config, load_config
-from .core.events import EventBus, Event
+# Core imports (optional - may not exist yet)
+try:
+    from .core.assistant import CodaAssistant
+except ImportError:
+    CodaAssistant = None
+
+try:
+    from .core.config import Config, load_config
+except ImportError:
+    Config = None
+    load_config = None
+
+try:
+    from .core.events import EventBus, Event
+except ImportError:
+    EventBus = None
+    Event = None
 
 # Component imports
-from .components.memory import MemoryManager
-from .components.personality import PersonalityEngine
-from .components.voice import VoiceProcessor
-from .components.tools import ToolManager
+try:
+    from .components.memory import MemoryManager
+except ImportError:
+    MemoryManager = None
+
+try:
+    from .components.personality import PersonalityEngine
+except ImportError:
+    PersonalityEngine = None
+
+try:
+    from .components.voice import VoiceManager
+except ImportError:
+    VoiceManager = None
+
+# Temporarily disable tools import
+# try:
+#     from .components.tools import ToolManager
+# except ImportError:
+ToolManager = None
 
 __all__ = [
     # Core
@@ -31,7 +60,7 @@ __all__ = [
     # Components
     "MemoryManager",
     "PersonalityEngine", 
-    "VoiceProcessor",
+    "VoiceManager",
     "ToolManager",
     
     # Metadata

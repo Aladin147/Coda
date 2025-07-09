@@ -102,7 +102,7 @@ class ToolParameter(BaseModel):
 class ToolDefinition(BaseModel):
     """Complete definition of a tool."""
     
-    name: str = Field(..., regex=r'^[a-zA-Z][a-zA-Z0-9_]*$')
+    name: str = Field(..., pattern=r'^[a-zA-Z][a-zA-Z0-9_]*$')
     description: str
     category: ToolCategory = ToolCategory.CUSTOM
     parameters: List[ToolParameter] = Field(default_factory=list)

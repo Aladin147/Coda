@@ -28,10 +28,24 @@ from .interfaces import (
 )
 
 from .manager import VoiceManager
-from .moshi_integration import MoshiVoiceProcessor
-from .hybrid_processor import HybridVoiceProcessor
+# Phase 1 components only
 from .audio_processor import AudioProcessor
-from .websocket_integration import WebSocketVoiceManager
+
+# Placeholder imports for Phase 2+ components
+try:
+    from .moshi_integration import MoshiVoiceProcessor
+except ImportError:
+    from .manager import MoshiVoiceProcessor
+
+try:
+    from .hybrid_processor import HybridVoiceProcessor
+except ImportError:
+    from .manager import HybridVoiceProcessor
+
+try:
+    from .websocket_integration import WebSocketVoiceManager
+except ImportError:
+    from .manager import WebSocketVoiceManager
 
 __all__ = [
     # Models
