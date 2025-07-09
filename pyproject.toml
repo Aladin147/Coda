@@ -1,0 +1,215 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coda"
+version = "2.0.0-alpha"
+description = "Core Operations & Digital Assistant - Next-generation local-first voice assistant"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Coda Development Team"},
+]
+keywords = ["voice-assistant", "ai", "local-first", "real-time", "speech"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+requires-python = ">=3.10"
+
+dependencies = [
+    # Core dependencies
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",
+    "python-dotenv>=1.0.0",
+    "click>=8.0.0",
+    
+    # Async and networking
+    "asyncio>=3.4.3",
+    "websockets>=12.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    
+    # Audio processing
+    "numpy>=1.20.0",
+    "soundfile>=0.12.0",
+    "pyaudio>=0.2.11",
+    
+    # Machine Learning
+    "torch>=2.0.0",
+    "transformers>=4.25.0",
+    "sentence-transformers>=2.2.0",
+    
+    # Memory and storage
+    "chromadb>=0.4.0",
+    "sqlite3",  # Built-in, but listed for clarity
+    
+    # LLM integration
+    "ollama>=0.1.0",
+    "requests>=2.25.0",
+    
+    # Utilities
+    "tqdm>=4.62.0",
+    "colorlog>=6.7.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+# Kyutai integration (future)
+kyutai = [
+    "moshi>=0.2.6",
+    "moshi-mlx>=0.2.6",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+
+# Production deployment
+prod = [
+    "gunicorn>=21.0.0",
+    "docker>=6.0.0",
+]
+
+# GPU acceleration
+gpu = [
+    "torch[cuda]>=2.0.0",
+    "torchaudio>=2.0.0",
+    "accelerate>=0.20.0",
+]
+
+# All optional dependencies
+all = [
+    "coda[kyutai,dev,prod,gpu]"
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/coda"
+Documentation = "https://github.com/yourusername/coda/docs"
+Repository = "https://github.com/yourusername/coda"
+Issues = "https://github.com/yourusername/coda/issues"
+
+[project.scripts]
+coda = "coda.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coda"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/docs",
+    "/configs",
+    "/scripts",
+]
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["coda"]
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pyaudio.*",
+    "soundfile.*",
+    "chromadb.*",
+    "ollama.*",
+]
+ignore_missing_imports = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--cov=src/coda",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "gpu: marks tests that require GPU",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["src/coda"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
