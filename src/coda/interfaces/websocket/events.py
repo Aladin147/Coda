@@ -7,7 +7,8 @@ communication between Coda and its clients.
 
 import time
 from enum import Enum
-from typing import Dict, Any, Optional, List, Union
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -53,10 +54,19 @@ class EventType(str, Enum):
     CONVERSATION_TURN = "conversation_turn"
     CONVERSATION_END = "conversation_end"
 
+    # Component integration events
+    COMPONENT_STATUS = "component_status"
+    COMPONENT_ERROR = "component_error"
+    COMPONENT_HEALTH = "component_health"
+    SYSTEM_STATUS = "system_status"
+    INTEGRATION_METRICS = "integration_metrics"
+
     # Performance events
     LATENCY_TRACE = "latency_trace"
     COMPONENT_TIMING = "component_timing"
     COMPONENT_STATS = "component_stats"
+    PERFORMANCE_ALERT = "performance_alert"
+    PERFORMANCE_METRICS = "performance_metrics"
 
     # Replay events
     REPLAY = "replay"
@@ -75,14 +85,14 @@ class BaseEvent(BaseModel):
 # System Events
 class SystemInfoEvent(BaseEvent):
     """System information event."""
-    
+
     type: EventType = EventType.SYSTEM_INFO
     data: Dict[str, Any] = Field(default_factory=dict)
 
 
 class SystemErrorEvent(BaseEvent):
     """System error event."""
-    
+
     type: EventType = EventType.SYSTEM_ERROR
     level: str  # "warning", "error", "critical"
     message: str
@@ -91,7 +101,7 @@ class SystemErrorEvent(BaseEvent):
 
 class SystemMetricsEvent(BaseEvent):
     """System metrics event."""
-    
+
     type: EventType = EventType.SYSTEM_METRICS
     memory_mb: float
     cpu_percent: float
@@ -102,14 +112,14 @@ class SystemMetricsEvent(BaseEvent):
 # STT Events
 class STTStartEvent(BaseEvent):
     """STT start event."""
-    
+
     type: EventType = EventType.STT_START
     mode: str  # "push_to_talk", "continuous", "file"
 
 
 class STTInterimEvent(BaseEvent):
     """STT interim result event."""
-    
+
     type: EventType = EventType.STT_INTERIM
     text: str
     confidence: float
@@ -117,7 +127,7 @@ class STTInterimEvent(BaseEvent):
 
 class STTResultEvent(BaseEvent):
     """STT final result event."""
-    
+
     type: EventType = EventType.STT_RESULT
     text: str
     confidence: float
@@ -127,7 +137,7 @@ class STTResultEvent(BaseEvent):
 
 class STTErrorEvent(BaseEvent):
     """STT error event."""
-    
+
     type: EventType = EventType.STT_ERROR
     error: str
     details: Optional[Dict[str, Any]] = None
@@ -136,7 +146,7 @@ class STTErrorEvent(BaseEvent):
 # LLM Events
 class LLMStartEvent(BaseEvent):
     """LLM processing start event."""
-    
+
     type: EventType = EventType.LLM_START
     prompt: str
     model: str
@@ -145,7 +155,7 @@ class LLMStartEvent(BaseEvent):
 
 class LLMTokenEvent(BaseEvent):
     """LLM token generation event."""
-    
+
     type: EventType = EventType.LLM_TOKEN
     token: str
     cumulative_text: str
@@ -153,7 +163,7 @@ class LLMTokenEvent(BaseEvent):
 
 class LLMResultEvent(BaseEvent):
     """LLM final result event."""
-    
+
     type: EventType = EventType.LLM_RESULT
     text: str
     duration_ms: float
@@ -163,7 +173,7 @@ class LLMResultEvent(BaseEvent):
 
 class LLMErrorEvent(BaseEvent):
     """LLM error event."""
-    
+
     type: EventType = EventType.LLM_ERROR
     error: str
     details: Optional[Dict[str, Any]] = None
@@ -172,7 +182,7 @@ class LLMErrorEvent(BaseEvent):
 # TTS Events
 class TTSStartEvent(BaseEvent):
     """TTS start event."""
-    
+
     type: EventType = EventType.TTS_START
     text: str
     voice_id: str
@@ -181,7 +191,7 @@ class TTSStartEvent(BaseEvent):
 
 class TTSProgressEvent(BaseEvent):
     """TTS progress event."""
-    
+
     type: EventType = EventType.TTS_PROGRESS
     progress_percent: float
     estimated_duration_ms: Optional[float] = None
@@ -189,7 +199,7 @@ class TTSProgressEvent(BaseEvent):
 
 class TTSResultEvent(BaseEvent):
     """TTS result event."""
-    
+
     type: EventType = EventType.TTS_RESULT
     duration_ms: float
     audio_duration_ms: float
@@ -198,7 +208,7 @@ class TTSResultEvent(BaseEvent):
 
 class TTSErrorEvent(BaseEvent):
     """TTS error event."""
-    
+
     type: EventType = EventType.TTS_ERROR
     error: str
     details: Optional[Dict[str, Any]] = None
@@ -206,7 +216,7 @@ class TTSErrorEvent(BaseEvent):
 
 class TTSStatusEvent(BaseEvent):
     """TTS status event."""
-    
+
     type: EventType = EventType.TTS_STATUS
     status: str  # "idle", "processing", "playing"
 
@@ -214,7 +224,7 @@ class TTSStatusEvent(BaseEvent):
 # Memory Events
 class MemoryStoreEvent(BaseEvent):
     """Memory store event."""
-    
+
     type: EventType = EventType.MEMORY_STORE
     content_preview: str
     memory_type: str
@@ -224,7 +234,7 @@ class MemoryStoreEvent(BaseEvent):
 
 class MemoryRetrieveEvent(BaseEvent):
     """Memory retrieve event."""
-    
+
     type: EventType = EventType.MEMORY_RETRIEVE
     query: str
     results_count: int
@@ -234,7 +244,7 @@ class MemoryRetrieveEvent(BaseEvent):
 # Tool Events
 class ToolCallEvent(BaseEvent):
     """Tool call event."""
-    
+
     type: EventType = EventType.TOOL_CALL
     tool_name: str
     parameters: Dict[str, Any]
@@ -243,7 +253,7 @@ class ToolCallEvent(BaseEvent):
 
 class ToolResultEvent(BaseEvent):
     """Tool result event."""
-    
+
     type: EventType = EventType.TOOL_RESULT
     tool_name: str
     call_id: str
@@ -253,7 +263,7 @@ class ToolResultEvent(BaseEvent):
 
 class ToolErrorEvent(BaseEvent):
     """Tool error event."""
-    
+
     type: EventType = EventType.TOOL_ERROR
     tool_name: str
     call_id: str
@@ -264,14 +274,14 @@ class ToolErrorEvent(BaseEvent):
 # Conversation Events
 class ConversationStartEvent(BaseEvent):
     """Conversation start event."""
-    
+
     type: EventType = EventType.CONVERSATION_START
     conversation_id: str
 
 
 class ConversationTurnEvent(BaseEvent):
     """Conversation turn event."""
-    
+
     type: EventType = EventType.CONVERSATION_TURN
     conversation_id: str
     turn_number: int
@@ -281,7 +291,7 @@ class ConversationTurnEvent(BaseEvent):
 
 class ConversationEndEvent(BaseEvent):
     """Conversation end event."""
-    
+
     type: EventType = EventType.CONVERSATION_END
     conversation_id: str
     total_turns: int
@@ -291,7 +301,7 @@ class ConversationEndEvent(BaseEvent):
 # Performance Events
 class LatencyTraceEvent(BaseEvent):
     """Latency trace event."""
-    
+
     type: EventType = EventType.LATENCY_TRACE
     component: str
     operation: str
@@ -301,10 +311,81 @@ class LatencyTraceEvent(BaseEvent):
 
 class ComponentTimingEvent(BaseEvent):
     """Component timing event."""
-    
+
     type: EventType = EventType.COMPONENT_TIMING
     component: str
     timings: Dict[str, float]  # operation -> duration_ms
+
+
+class ComponentStatusEvent(BaseEvent):
+    """Component status change event."""
+
+    type: EventType = EventType.COMPONENT_STATUS
+    component_type: str
+    state: str
+    initialization_order: Optional[int] = None
+    dependencies: List[str] = Field(default_factory=list)
+
+
+class ComponentErrorEvent(BaseEvent):
+    """Component error event."""
+
+    type: EventType = EventType.COMPONENT_ERROR
+    component_type: str
+    error_message: str
+    error_count: int
+    state: str = "failed"
+
+
+class ComponentHealthEvent(BaseEvent):
+    """Component health status event."""
+
+    type: EventType = EventType.COMPONENT_HEALTH
+    component_type: str
+    health_status: Dict[str, Any]
+
+
+class SystemStatusEvent(BaseEvent):
+    """System status event."""
+
+    type: EventType = EventType.SYSTEM_STATUS
+    total_components: int
+    ready_components: int
+    failed_components: int
+    integration_health: str
+    components: Dict[str, Any]
+
+
+class IntegrationMetricsEvent(BaseEvent):
+    """Integration metrics event."""
+
+    type: EventType = EventType.INTEGRATION_METRICS
+    is_active: bool
+    websocket_server_available: bool
+    event_handlers_registered: bool
+    total_events_processed: int
+
+
+class PerformanceAlertEvent(BaseEvent):
+    """Performance alert event."""
+
+    type: EventType = EventType.PERFORMANCE_ALERT
+    alert_id: str
+    component: str
+    metric_name: str
+    current_value: float
+    threshold_value: float
+    severity: str  # "warning", "critical"
+    message: str
+
+
+class PerformanceMetricsEvent(BaseEvent):
+    """Performance metrics event."""
+
+    type: EventType = EventType.PERFORMANCE_METRICS
+    system_metrics: Dict[str, Any]
+    component_metrics: Dict[str, Any]
+    alerts_count: int
 
 
 # Event class mapping for validation
@@ -333,6 +414,11 @@ EVENT_CLASS_MAP = {
     EventType.CONVERSATION_START: ConversationStartEvent,
     EventType.CONVERSATION_TURN: ConversationTurnEvent,
     EventType.CONVERSATION_END: ConversationEndEvent,
+    EventType.COMPONENT_STATUS: ComponentStatusEvent,
+    EventType.COMPONENT_ERROR: ComponentErrorEvent,
+    EventType.COMPONENT_HEALTH: ComponentHealthEvent,
+    EventType.SYSTEM_STATUS: SystemStatusEvent,
+    EventType.INTEGRATION_METRICS: IntegrationMetricsEvent,
     EventType.LATENCY_TRACE: LatencyTraceEvent,
     EventType.COMPONENT_TIMING: ComponentTimingEvent,
 }
@@ -341,49 +427,49 @@ EVENT_CLASS_MAP = {
 def create_event(event_type: EventType, seq: int, **kwargs) -> BaseEvent:
     """
     Create an event of the specified type.
-    
+
     Args:
         event_type: The type of event to create
         seq: Sequence number for the event
         **kwargs: Additional event data
-        
+
     Returns:
         The created event instance
-        
+
     Raises:
         ValueError: If event_type is not supported
     """
     event_class = EVENT_CLASS_MAP.get(event_type)
     if not event_class:
         raise ValueError(f"Unsupported event type: {event_type}")
-    
+
     return event_class(seq=seq, **kwargs)
 
 
 def validate_event(event_data: Dict[str, Any]) -> BaseEvent:
     """
     Validate and parse event data.
-    
+
     Args:
         event_data: Raw event data dictionary
-        
+
     Returns:
         Validated event instance
-        
+
     Raises:
         ValueError: If event data is invalid
     """
     event_type = event_data.get("type")
     if not event_type:
         raise ValueError("Event data missing 'type' field")
-    
+
     try:
         event_type_enum = EventType(event_type)
     except ValueError:
         raise ValueError(f"Invalid event type: {event_type}")
-    
+
     event_class = EVENT_CLASS_MAP.get(event_type_enum)
     if not event_class:
         raise ValueError(f"Unsupported event type: {event_type}")
-    
+
     return event_class(**event_data)

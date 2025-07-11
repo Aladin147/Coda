@@ -7,7 +7,9 @@ A next-generation, local-first voice assistant built for real-time interaction a
 __version__ = "2.0.0-alpha"
 __author__ = "Coda Development Team"
 __email__ = "dev@coda-assistant.com"
-__description__ = "Core Operations & Digital Assistant - Next-generation local-first voice assistant"
+__description__ = (
+    "Core Operations & Digital Assistant - Next-generation local-first voice assistant"
+)
 
 # Core imports (optional - may not exist yet)
 try:
@@ -22,7 +24,7 @@ except ImportError:
     load_config = None
 
 try:
-    from .core.events import EventBus, Event
+    from .core.events import Event, EventBus
 except ImportError:
     EventBus = None
     Event = None
@@ -56,13 +58,11 @@ __all__ = [
     "load_config",
     "EventBus",
     "Event",
-    
     # Components
     "MemoryManager",
-    "PersonalityEngine", 
+    "PersonalityEngine",
     "VoiceManager",
     "ToolManager",
-    
     # Metadata
     "__version__",
     "__author__",

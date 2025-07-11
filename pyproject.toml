@@ -27,46 +27,62 @@ requires-python = ">=3.10"
 
 dependencies = [
     # Core dependencies
-    "pydantic>=2.0.0",
-    "pyyaml>=6.0.0",
-    "python-dotenv>=1.0.0",
-    "click>=8.0.0",
-    
-    # Async and networking
-    "asyncio>=3.4.3",
-    "websockets>=12.0",
-    "fastapi>=0.100.0",
-    "uvicorn>=0.20.0",
-    
-    # Audio processing
-    "numpy>=1.20.0",
-    "soundfile>=0.12.0",
+    "pydantic>=2.11.7,<3.0.0",  # Pin before V3 breaking changes
+    "pyyaml>=6.0.1",
+    "python-dotenv>=1.1.0",
+    "click>=8.1.7",
+
+    # Async and networking (latest versions)
+    "websockets>=15.0",
+    "fastapi>=0.116.0",
+    "uvicorn[standard]>=0.35.0",
+
+    # Audio processing (latest)
+    "numpy>=2.0.0",
+    "soundfile>=0.13.0",
+    "librosa>=0.11.0",
     "pyaudio>=0.2.11",
-    
-    # Machine Learning
-    "torch>=2.0.0",
-    "transformers>=4.25.0",
-    "sentence-transformers>=2.2.0",
-    
-    # Memory and storage
-    "chromadb>=0.4.0",
-    "sqlite3",  # Built-in, but listed for clarity
-    
+
+    # Machine Learning (RTX 5090 optimized)
+    "torch>=2.6.0",  # Will install nightly for SM_120
+    "transformers>=4.53.0",
+    "sentence-transformers>=5.0.0",
+
+    # Memory and storage (latest)
+    "chromadb>=1.0.10",
+
     # LLM integration
-    "ollama>=0.1.0",
-    "requests>=2.25.0",
-    
-    # Utilities
-    "tqdm>=4.62.0",
-    "colorlog>=6.7.0",
-    "rich>=13.0.0",
+    "ollama>=0.5.1",
+    "httpx>=0.28.0",  # Latest async HTTP
+    "requests>=2.32.0",
+
+    # Utilities (latest)
+    "tqdm>=4.67.0",
+    "rich>=14.0.0",
+    "structlog>=24.0.0",
+
+    # Performance and monitoring
+    "psutil>=7.0.0",
+    "pynvml>=12.0.0",
 ]
 
 [project.optional-dependencies]
-# Kyutai integration (future)
-kyutai = [
-    "moshi>=0.2.6",
-    "moshi-mlx>=0.2.6",
+# Voice processing dependencies
+voice = [
+    "moshi>=0.2.9",
+    "webrtcvad>=2.0.10",
+    "silero-vad>=5.0.0",
+    "noisereduce>=3.1.0",
+    "aiofiles>=24.1.0",
+]
+
+# Performance optimization dependencies
+performance = [
+    "bitsandbytes>=0.45.0",
+    "optimum>=1.20.0",
+    "accelerate>=1.0.0",
+    "diskcache>=5.6.3",
+    "redis>=5.0.0",
 ]
 
 # Development dependencies
@@ -189,6 +205,11 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "gpu: marks tests that require GPU",
+    "asyncio: marks tests as async tests",
+    "performance: marks tests as performance benchmarks",
+    "load_test: marks tests as load tests",
+    "stress_test: marks tests as stress tests",
+    "recovery_test: marks tests as recovery tests",
 ]
 
 # Coverage configuration

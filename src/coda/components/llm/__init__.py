@@ -18,34 +18,36 @@ Features:
 - Comprehensive analytics and monitoring
 """
 
+from .base_provider import BaseLLMProvider, LLMError, LLMTimeoutError
+from .conversation_manager import ConversationManager
+from .function_calling_orchestrator import FunctionCallingOrchestrator
 from .interfaces import (
-    LLMProviderInterface,
     ConversationManagerInterface,
     LLMManagerInterface,
+    LLMProviderInterface,
     WebSocketLLMInterface,
 )
+from .manager import LLMManager
 from .models import (
-    LLMMessage,
-    LLMConversation,
-    LLMResponse,
-    LLMStreamChunk,
-    LLMProvider,
-    LLMConfig,
     ConversationConfig,
     FunctionCall,
     FunctionCallResult,
+    LLMConfig,
+    LLMConversation,
+    LLMMessage,
+    LLMProvider,
+    LLMResponse,
+    LLMRole,
+    LLMStreamChunk,
+    MessageRole,
 )
-from .base_provider import BaseLLMProvider, LLMError, LLMTimeoutError
-from .providers import (
-    OpenAIProvider,
-    AnthropicProvider,
-    OllamaProvider,
-    LocalModelProvider,
-)
-from .conversation_manager import ConversationManager
 from .prompt_enhancer import PromptEnhancer
-from .function_calling_orchestrator import FunctionCallingOrchestrator
-from .manager import LLMManager
+from .providers import (
+    AnthropicProvider,
+    LocalModelProvider,
+    OllamaProvider,
+    OpenAIProvider,
+)
 from .websocket_integration import WebSocketLLMManager
 
 __all__ = [
@@ -54,7 +56,6 @@ __all__ = [
     "ConversationManagerInterface",
     "LLMManagerInterface",
     "WebSocketLLMInterface",
-    
     # Models
     "LLMMessage",
     "LLMConversation",
@@ -65,7 +66,8 @@ __all__ = [
     "ConversationConfig",
     "FunctionCall",
     "FunctionCallResult",
-    
+    "MessageRole",
+    "LLMRole",
     # Core Components
     "BaseLLMProvider",
     "LLMError",

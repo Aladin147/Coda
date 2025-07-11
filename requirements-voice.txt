@@ -7,19 +7,19 @@
 # Kyutai Moshi - Revolutionary real-time speech processing
 moshi>=0.1.0
 
-# PyTorch ecosystem for deep learning
-torch>=2.1.0
+# PyTorch ecosystem for deep learning (RTX 5090 optimized)
+torch>=2.6.0  # Using nightly for SM_120 support
 torchaudio>=2.1.0
 torchvision>=0.16.0
 
-# Audio processing and analysis
-librosa>=0.10.1
-soundfile>=0.12.1
+# Audio processing and analysis (latest)
+librosa>=0.11.0
+soundfile>=0.13.0
 pyaudio>=0.2.11
 webrtcvad>=2.0.10
 
-# Voice Activity Detection
-silero-vad>=4.0.0
+# Voice Activity Detection (latest)
+silero-vad>=5.0.0
 
 # ============================================================================
 # EXTERNAL LLM INTEGRATION
@@ -39,7 +39,7 @@ aiohttp>=3.9.0
 # Audio format conversion and processing
 pydub>=0.25.1
 scipy>=1.11.0
-numpy>=1.24.0
+numpy>=2.0.0
 
 # Real-time audio streaming
 pyaudio>=0.2.11
@@ -83,7 +83,7 @@ redis>=5.0.0
 # ============================================================================
 
 # Data validation and serialization (already in main requirements)
-pydantic>=2.5.0
+pydantic>=2.11.7,<3.0.0
 pydantic-settings>=2.1.0
 
 # Audio data processing

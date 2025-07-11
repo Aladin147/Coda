@@ -17,7 +17,7 @@ from src.coda.components.tools.models import (
     ParameterType,
     ToolConfig,
 )
-from src.coda.components.tools.base_tool import BaseTool, ToolError, ToolValidationError
+from src.coda.components.tools.base_tool import BaseTool, ToolError, ToolValidationError, ToolExecutionError
 from src.coda.components.tools.registry import ToolRegistry
 from src.coda.components.tools.executor import ToolExecutor
 from src.coda.components.tools.function_calling import FunctionCallingManager
@@ -536,7 +536,7 @@ class TestBuiltinTools:
         assert result == "3.33"
         
         # Test invalid expression
-        with pytest.raises(ValueError):
+        with pytest.raises(ToolExecutionError):
             await tool.execute({"expression": "invalid"})
 
 

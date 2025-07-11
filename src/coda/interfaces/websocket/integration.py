@@ -5,14 +5,13 @@ This module provides integration between Coda's core components and the WebSocke
 allowing real-time monitoring and event broadcasting.
 """
 
-import asyncio
 import logging
 import time
 import uuid
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
-from .server import CodaWebSocketServer
 from .events import EventType
+from .server import CodaWebSocketServer
 
 logger = logging.getLogger("coda.websocket.integration")
 
@@ -55,25 +54,31 @@ class CodaWebSocketIntegration:
 
     async def system_startup(self, version: str, config: Dict[str, Any]) -> None:
         """Signal system startup."""
-        await self.server.broadcast_system_info({
-            "event": "startup",
-            "version": version,
-            "config": config,
-            "session_id": self.session_id,
-        })
+        await self.server.broadcast_system_info(
+            {
+                "event": "startup",
+                "version": version,
+                "config": config,
+                "session_id": self.session_id,
+            }
+        )
         logger.info("System startup event sent")
 
     async def system_shutdown(self) -> None:
         """Signal system shutdown."""
         uptime = time.time() - self.start_time
-        await self.server.broadcast_system_info({
-            "event": "shutdown",
-            "uptime_seconds": uptime,
-            "session_id": self.session_id,
-        })
+        await self.server.broadcast_system_info(
+            {
+                "event": "shutdown",
+                "uptime_seconds": uptime,
+                "session_id": self.session_id,
+            }
+        )
         logger.info("System shutdown event sent")
 
-    async def system_error(self, level: str, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    async def system_error(
+        self, level: str, message: str, details: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Signal a system error."""
         await self.server.broadcast_system_error(level, message, details)
         logger.debug(f"System error event sent: {level} - {message}")
@@ -83,9 +88,7 @@ class CodaWebSocketIntegration:
     async def stt_start(self, mode: str = "push_to_talk") -> None:
         """Signal the start of speech-to-text processing."""
         await self.server.broadcast_event(
-            EventType.STT_START,
-            {"mode": mode},
-            session_id=self.session_id
+            EventType.STT_START, {"mode": mode}, session_id=self.session_id
         )
         logger.debug(f"STT started in {mode} mode")
 
@@ -94,12 +97,13 @@ class CodaWebSocketIntegration:
         await self.server.broadcast_event(
             EventType.STT_INTERIM,
             {"text": text, "confidence": confidence},
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"STT interim result: {text[:30]}...")
 
-    async def stt_final_result(self, text: str, confidence: float, duration_ms: float, 
-                              language: Optional[str] = None) -> None:
+    async def stt_final_result(
+        self, text: str, confidence: float, duration_ms: float, language: Optional[str] = None
+    ) -> None:
         """Send the final STT result."""
         await self.server.broadcast_event(
             EventType.STT_RESULT,
@@ -110,7 +114,7 @@ class CodaWebSocketIntegration:
                 "language": language,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"STT final result: {text[:50]}...")
 
@@ -120,7 +124,7 @@ class CodaWebSocketIntegration:
             EventType.STT_ERROR,
             {"error": error, "details": details},
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.warning(f"STT error: {error}")
 
@@ -135,7 +139,7 @@ class CodaWebSocketIntegration:
                 "model": model,
                 "temperature": temperature,
             },
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"LLM processing started with model {model}")
 
@@ -144,11 +148,12 @@ class CodaWebSocketIntegration:
         await self.server.broadcast_event(
             EventType.LLM_TOKEN,
             {"token": token, "cumulative_text": cumulative_text},
-            session_id=self.session_id
+            session_id=self.session_id,
         )
 
-    async def llm_result(self, text: str, duration_ms: float, token_count: int, 
-                        tokens_per_second: float) -> None:
+    async def llm_result(
+        self, text: str, duration_ms: float, token_count: int, tokens_per_second: float
+    ) -> None:
         """Send the final LLM result."""
         await self.server.broadcast_event(
             EventType.LLM_RESULT,
@@ -159,9 +164,11 @@ class CodaWebSocketIntegration:
                 "tokens_per_second": tokens_per_second,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
-        logger.debug(f"LLM result: {text[:50]}... ({token_count} tokens, {tokens_per_second:.1f} tok/s)")
+        logger.debug(
+            f"LLM result: {text[:50]}... ({token_count} tokens, {tokens_per_second:.1f} tok/s)"
+        )
 
     async def llm_error(self, error: str, details: Optional[Dict[str, Any]] = None) -> None:
         """Signal an LLM error."""
@@ -169,7 +176,7 @@ class CodaWebSocketIntegration:
             EventType.LLM_ERROR,
             {"error": error, "details": details},
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.warning(f"LLM error: {error}")
 
@@ -180,11 +187,13 @@ class CodaWebSocketIntegration:
         await self.server.broadcast_event(
             EventType.TTS_START,
             {"text": text, "voice_id": voice_id, "engine": engine},
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"TTS started with {engine} engine")
 
-    async def tts_progress(self, progress_percent: float, estimated_duration_ms: Optional[float] = None) -> None:
+    async def tts_progress(
+        self, progress_percent: float, estimated_duration_ms: Optional[float] = None
+    ) -> None:
         """Send TTS progress update."""
         await self.server.broadcast_event(
             EventType.TTS_PROGRESS,
@@ -192,10 +201,12 @@ class CodaWebSocketIntegration:
                 "progress_percent": progress_percent,
                 "estimated_duration_ms": estimated_duration_ms,
             },
-            session_id=self.session_id
+            session_id=self.session_id,
         )
 
-    async def tts_result(self, duration_ms: float, audio_duration_ms: float, success: bool = True) -> None:
+    async def tts_result(
+        self, duration_ms: float, audio_duration_ms: float, success: bool = True
+    ) -> None:
         """Send TTS result."""
         await self.server.broadcast_event(
             EventType.TTS_RESULT,
@@ -205,9 +216,11 @@ class CodaWebSocketIntegration:
                 "success": success,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
-        logger.debug(f"TTS completed: {duration_ms:.0f}ms processing, {audio_duration_ms:.0f}ms audio")
+        logger.debug(
+            f"TTS completed: {duration_ms:.0f}ms processing, {audio_duration_ms:.0f}ms audio"
+        )
 
     async def tts_error(self, error: str, details: Optional[Dict[str, Any]] = None) -> None:
         """Signal a TTS error."""
@@ -215,24 +228,24 @@ class CodaWebSocketIntegration:
             EventType.TTS_ERROR,
             {"error": error, "details": details},
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.warning(f"TTS error: {error}")
 
     async def tts_status(self, status: str) -> None:
         """Send TTS status update."""
         await self.server.broadcast_event(
-            EventType.TTS_STATUS,
-            {"status": status},
-            session_id=self.session_id
+            EventType.TTS_STATUS, {"status": status}, session_id=self.session_id
         )
 
     # Memory events
 
-    async def memory_store(self, content: str, memory_type: str, importance: float, memory_id: str) -> None:
+    async def memory_store(
+        self, content: str, memory_type: str, importance: float, memory_id: str
+    ) -> None:
         """Signal that a memory has been stored."""
         content_preview = content[:100] + "..." if len(content) > 100 else content
-        
+
         await self.server.broadcast_event(
             EventType.MEMORY_STORE,
             {
@@ -242,11 +255,13 @@ class CodaWebSocketIntegration:
                 "memory_id": memory_id,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"Memory stored: {content_preview[:30]}...")
 
-    async def memory_retrieve(self, query: str, results_count: int, relevance_scores: List[float]) -> None:
+    async def memory_retrieve(
+        self, query: str, results_count: int, relevance_scores: List[float]
+    ) -> None:
         """Signal memory retrieval."""
         await self.server.broadcast_event(
             EventType.MEMORY_RETRIEVE,
@@ -255,7 +270,7 @@ class CodaWebSocketIntegration:
                 "results_count": results_count,
                 "relevance_scores": relevance_scores,
             },
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"Memory retrieved: {results_count} results for '{query[:30]}...'")
 
@@ -270,11 +285,13 @@ class CodaWebSocketIntegration:
                 "parameters": parameters,
                 "call_id": call_id,
             },
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"Tool called: {tool_name} ({call_id})")
 
-    async def tool_result(self, tool_name: str, call_id: str, result: Any, duration_ms: float) -> None:
+    async def tool_result(
+        self, tool_name: str, call_id: str, result: Any, duration_ms: float
+    ) -> None:
         """Signal a tool result."""
         await self.server.broadcast_event(
             EventType.TOOL_RESULT,
@@ -285,12 +302,13 @@ class CodaWebSocketIntegration:
                 "duration_ms": duration_ms,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"Tool result: {tool_name} ({call_id}) - {duration_ms:.0f}ms")
 
-    async def tool_error(self, tool_name: str, call_id: str, error: str, 
-                        details: Optional[Dict[str, Any]] = None) -> None:
+    async def tool_error(
+        self, tool_name: str, call_id: str, error: str, details: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Signal a tool error."""
         await self.server.broadcast_event(
             EventType.TOOL_ERROR,
@@ -301,7 +319,7 @@ class CodaWebSocketIntegration:
                 "details": details,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.warning(f"Tool error: {tool_name} ({call_id}) - {error}")
 
@@ -313,15 +331,16 @@ class CodaWebSocketIntegration:
             EventType.CONVERSATION_START,
             {"conversation_id": conversation_id},
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.info(f"Conversation started: {conversation_id}")
 
-    async def conversation_turn(self, conversation_id: str, turn_number: int, 
-                              user_input: str, assistant_response: str) -> None:
+    async def conversation_turn(
+        self, conversation_id: str, turn_number: int, user_input: str, assistant_response: str
+    ) -> None:
         """Signal a conversation turn."""
         self.conversation_turn_count += 1
-        
+
         await self.server.broadcast_event(
             EventType.CONVERSATION_TURN,
             {
@@ -331,11 +350,13 @@ class CodaWebSocketIntegration:
                 "assistant_response": assistant_response,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         logger.debug(f"Conversation turn {turn_number}: {user_input[:30]}...")
 
-    async def conversation_end(self, conversation_id: str, total_turns: int, duration_seconds: float) -> None:
+    async def conversation_end(
+        self, conversation_id: str, total_turns: int, duration_seconds: float
+    ) -> None:
         """Signal the end of a conversation."""
         await self.server.broadcast_event(
             EventType.CONVERSATION_END,
@@ -345,14 +366,21 @@ class CodaWebSocketIntegration:
                 "duration_seconds": duration_seconds,
             },
             high_priority=True,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
-        logger.info(f"Conversation ended: {conversation_id} ({total_turns} turns, {duration_seconds:.1f}s)")
+        logger.info(
+            f"Conversation ended: {conversation_id} ({total_turns} turns, {duration_seconds:.1f}s)"
+        )
 
     # Performance events
 
-    async def latency_trace(self, component: str, operation: str, duration_ms: float, 
-                           metadata: Optional[Dict[str, Any]] = None) -> None:
+    async def latency_trace(
+        self,
+        component: str,
+        operation: str,
+        duration_ms: float,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Send a latency trace event."""
         await self.server.broadcast_event(
             EventType.LATENCY_TRACE,
@@ -362,7 +390,7 @@ class CodaWebSocketIntegration:
                 "duration_ms": duration_ms,
                 "metadata": metadata,
             },
-            session_id=self.session_id
+            session_id=self.session_id,
         )
 
     async def component_timing(self, component: str, timings: Dict[str, float]) -> None:
@@ -370,5 +398,5 @@ class CodaWebSocketIntegration:
         await self.server.broadcast_event(
             EventType.COMPONENT_TIMING,
             {"component": component, "timings": timings},
-            session_id=self.session_id
+            session_id=self.session_id,
         )

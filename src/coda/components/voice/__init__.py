@@ -2,34 +2,32 @@
 Voice processing system for Coda 2.0.
 
 This package provides comprehensive voice processing capabilities including:
-- Kyutai Moshi integration for real-time speech conversation
+- Kyutai Moshi integration for real - time speech conversation
 - External LLM integration for enhanced reasoning
 - Hybrid processing modes for optimal performance
 - Audio streaming and WebSocket integration
 - Voice activity detection and audio processing
 """
 
-from .models import (
-    VoiceConfig,
-    VoiceMessage,
-    VoiceResponse,
-    VoiceStreamChunk,
-    AudioConfig,
-    ConversationState,
-    VoiceEvent,
-)
-
+# Phase 1 components only
+from .audio_processor import AudioProcessor
 from .interfaces import (
-    VoiceProcessorInterface,
     AudioProcessorInterface,
     SpeechToTextInterface,
     TextToSpeechInterface,
     VoiceActivityDetectorInterface,
+    VoiceProcessorInterface,
 )
-
 from .manager import VoiceManager
-# Phase 1 components only
-from .audio_processor import AudioProcessor
+from .models import (
+    AudioConfig,
+    ConversationState,
+    VoiceConfig,
+    VoiceEvent,
+    VoiceMessage,
+    VoiceResponse,
+    VoiceStreamChunk,
+)
 
 # Placeholder imports for Phase 2+ components
 try:
@@ -50,24 +48,22 @@ except ImportError:
 __all__ = [
     # Models
     "VoiceConfig",
-    "VoiceMessage", 
+    "VoiceMessage",
     "VoiceResponse",
     "VoiceStreamChunk",
     "AudioConfig",
     "ConversationState",
     "VoiceEvent",
-    
     # Interfaces
     "VoiceProcessorInterface",
-    "AudioProcessorInterface", 
+    "AudioProcessorInterface",
     "SpeechToTextInterface",
     "TextToSpeechInterface",
     "VoiceActivityDetectorInterface",
-    
     # Core components
     "VoiceManager",
     "MoshiVoiceProcessor",
-    "HybridVoiceProcessor", 
+    "HybridVoiceProcessor",
     "AudioProcessor",
     "WebSocketVoiceManager",
 ]

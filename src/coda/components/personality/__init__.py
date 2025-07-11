@@ -18,45 +18,44 @@ Features:
 - WebSocket integration for real-time monitoring
 """
 
+from .behavioral_conditioner import BehavioralConditioner
 from .interfaces import (
-    PersonalityParameterInterface,
     BehavioralConditionerInterface,
-    TopicAwarenessInterface,
+    PersonalityManagerInterface,
+    PersonalityParameterInterface,
     PersonalLoreInterface,
     SessionManagerInterface,
-    PersonalityManagerInterface,
+    TopicAwarenessInterface,
     WebSocketPersonalityInterface,
 )
+from .manager import PersonalityManager
 from .models import (
-    PersonalityTrait,
-    PersonalityParameters,
     BehaviorProfile,
-    TopicContext,
+    PersonalityAdjustment,
+    PersonalityConfig,
+    PersonalityEvent,
+    PersonalityParameters,
+    PersonalityTrait,
     PersonalLore,
     SessionState,
-    PersonalityAdjustment,
-    PersonalityEvent,
-    PersonalityConfig,
+    TopicContext,
 )
 from .parameters import PersonalityParameterManager
-from .behavioral_conditioner import BehavioralConditioner
-from .topic_awareness import TopicAwareness
 from .personal_lore import PersonalLoreManager
-from .session_manager import SessionManager
-from .manager import PersonalityManager
-from .websocket_integration import WebSocketPersonalityManager
 from .prompt_enhancer import PersonalityPromptEnhancer
+from .session_manager import SessionManager
+from .topic_awareness import TopicAwareness
+from .websocket_integration import WebSocketPersonalityManager
 
 __all__ = [
     # Interfaces
     "PersonalityParameterInterface",
     "BehavioralConditionerInterface",
-    "TopicAwarenessInterface", 
+    "TopicAwarenessInterface",
     "PersonalLoreInterface",
     "SessionManagerInterface",
     "PersonalityManagerInterface",
     "WebSocketPersonalityInterface",
-    
     # Models
     "PersonalityTrait",
     "PersonalityParameters",
@@ -67,7 +66,6 @@ __all__ = [
     "PersonalityAdjustment",
     "PersonalityEvent",
     "PersonalityConfig",
-    
     # Implementations
     "PersonalityParameterManager",
     "BehavioralConditioner",

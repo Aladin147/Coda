@@ -3,6 +3,7 @@ Unit tests for the memory system.
 """
 
 import pytest
+import pytest_asyncio
 import asyncio
 import tempfile
 import shutil
@@ -175,7 +176,7 @@ class TestMemoryEncoder:
 class TestLongTermMemory:
     """Test cases for LongTermMemory."""
     
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def memory(self):
         """Create a test long-term memory instance."""
         # Use temporary directory for testing
@@ -185,9 +186,11 @@ class TestLongTermMemory:
             vector_db_type="in_memory",  # Use in-memory for testing
             max_memories=10
         )
-        
+
         memory = LongTermMemory(config)
         yield memory
+        # Cleanup temp directory
+        shutil.rmtree(temp_dir, ignore_errors=True)
         
         # Cleanup
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -262,11 +265,10 @@ class TestLongTermMemory:
         assert stats.average_importance > 0
 
 
-@pytest.mark.asyncio
 class TestMemoryManager:
     """Test cases for MemoryManager."""
     
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def manager(self):
         """Create a test memory manager."""
         # Use temporary directory for testing
@@ -280,10 +282,10 @@ class TestMemoryManager:
             ),
             auto_persist=False  # Disable auto-persist for testing
         )
-        
+
         manager = MemoryManager(config)
         yield manager
-        
+
         # Cleanup
         shutil.rmtree(temp_dir, ignore_errors=True)
     
@@ -305,6 +307,7 @@ class TestMemoryManager:
         assert context.short_term_turns == 2
         assert context.long_term_memories == 0
     
+    @pytest.mark.asyncio
     async def test_enhanced_context(self, manager):
         """Test getting enhanced context with long-term memories."""
         # Add some conversation
@@ -320,6 +323,7 @@ class TestMemoryManager:
         assert len(context.messages) >= 2  # At least the conversation
         # May include long-term memories depending on relevance
     
+    @pytest.mark.asyncio
     async def test_store_fact(self, manager):
         """Test storing facts."""
         memory_id = await manager.store_fact("Test fact", importance=0.8)
@@ -330,6 +334,7 @@ class TestMemoryManager:
         results = await manager.search_memories("Test fact")
         assert len(results) >= 1
     
+    @pytest.mark.asyncio
     async def test_consolidate_short_term(self, manager):
         """Test consolidating short-term memory."""
         # Add some conversation turns
@@ -343,6 +348,7 @@ class TestMemoryManager:
         
         assert memories_created >= 0  # May create memories depending on content
     
+    @pytest.mark.asyncio
     async def test_memory_stats(self, manager):
         """Test getting memory statistics."""
         manager.add_turn("user", "Hello")

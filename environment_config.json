@@ -34,10 +34,15 @@
     "streaming_enabled": true,
     "confidence_threshold": 0.7
   },
+  "ssl_config": {
+    "verify_ssl": false,
+    "ssl_cert_file": null,
+    "ollama_ssl_verify": false
+  },
   "dependencies": {
-    "torch": "2.9.0.dev20250707+cu128",
-    "torchvision": "0.24.0.dev20250708+cu128",
-    "torchaudio": "2.8.0.dev20250708+cu128",
+    "torch": "2.6.0+cu124",
+    "torchvision": "0.21.0+cu124",
+    "torchaudio": "2.6.0+cu124",
     "moshi": "0.2.9",
     "transformers": "4.53.1",
     "accelerate": "1.8.1",

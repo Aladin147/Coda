@@ -12,50 +12,54 @@ Features:
 - Type-safe event system
 """
 
-from .server import CodaWebSocketServer
 from .events import (
-    EventType,
     BaseEvent,
-    SystemInfoEvent,
-    SystemErrorEvent,
-    SystemMetricsEvent,
-    STTStartEvent,
-    STTInterimEvent,
-    STTResultEvent,
-    STTErrorEvent,
-    LLMStartEvent,
-    LLMTokenEvent,
-    LLMResultEvent,
-    LLMErrorEvent,
-    TTSStartEvent,
-    TTSProgressEvent,
-    TTSResultEvent,
-    TTSErrorEvent,
-    MemoryStoreEvent,
-    MemoryRetrieveEvent,
-    ToolCallEvent,
-    ToolResultEvent,
-    ToolErrorEvent,
+    ComponentErrorEvent,
+    ComponentHealthEvent,
+    ComponentStatusEvent,
+    ComponentTimingEvent,
+    ConversationEndEvent,
     ConversationStartEvent,
     ConversationTurnEvent,
-    ConversationEndEvent,
+    EventType,
+    IntegrationMetricsEvent,
     LatencyTraceEvent,
-    ComponentTimingEvent,
+    LLMErrorEvent,
+    LLMResultEvent,
+    LLMStartEvent,
+    LLMTokenEvent,
+    MemoryRetrieveEvent,
+    MemoryStoreEvent,
+    STTErrorEvent,
+    STTInterimEvent,
+    STTResultEvent,
+    STTStartEvent,
+    SystemErrorEvent,
+    SystemInfoEvent,
+    SystemMetricsEvent,
+    SystemStatusEvent,
+    ToolCallEvent,
+    ToolErrorEvent,
+    ToolResultEvent,
+    TTSErrorEvent,
+    TTSProgressEvent,
+    TTSResultEvent,
+    TTSStartEvent,
     create_event,
     validate_event,
 )
 from .integration import CodaWebSocketIntegration
 from .performance import WebSocketPerfIntegration
+from .server import CodaWebSocketServer
 
 __all__ = [
     # Core server
     "CodaWebSocketServer",
-    
     # Event types and classes
     "EventType",
     "BaseEvent",
     "SystemInfoEvent",
-    "SystemErrorEvent", 
+    "SystemErrorEvent",
     "SystemMetricsEvent",
     "STTStartEvent",
     "STTInterimEvent",
@@ -77,13 +81,16 @@ __all__ = [
     "ConversationStartEvent",
     "ConversationTurnEvent",
     "ConversationEndEvent",
+    "ComponentStatusEvent",
+    "ComponentErrorEvent",
+    "ComponentHealthEvent",
+    "SystemStatusEvent",
+    "IntegrationMetricsEvent",
     "LatencyTraceEvent",
     "ComponentTimingEvent",
-    
     # Utilities
     "create_event",
     "validate_event",
-    
     # Integration
     "CodaWebSocketIntegration",
     "WebSocketPerfIntegration",

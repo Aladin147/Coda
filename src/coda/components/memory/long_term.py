@@ -5,14 +5,14 @@ This module provides a LongTermMemory class for persistent memory storage
 using vector embeddings and semantic search capabilities.
 """
 
-import os
+import asyncio
 import json
 import logging
-import asyncio
+import os
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -20,25 +20,27 @@ from sentence_transformers import SentenceTransformer
 # Vector database imports
 try:
     import chromadb
+
     CHROMA_AVAILABLE = True
 except ImportError:
     CHROMA_AVAILABLE = False
 
 try:
     import sqlite3
+
     SQLITE_AVAILABLE = True
 except ImportError:
     SQLITE_AVAILABLE = False
 
 from .interfaces import LongTermMemoryInterface
 from .models import (
+    LongTermMemoryConfig,
     Memory,
     MemoryMetadata,
     MemoryQuery,
     MemoryResult,
     MemoryStats,
     MemoryType,
-    LongTermMemoryConfig,
 )
 
 logger = logging.getLogger("coda.memory.long_term")
@@ -47,7 +49,7 @@ logger = logging.getLogger("coda.memory.long_term")
 class LongTermMemory(LongTermMemoryInterface):
     """
     Manages long-term memory using vector embeddings for semantic search.
-    
+
     Features:
     - Vector-based semantic search with ChromaDB or SQLite
     - Time-based relevance decay
@@ -57,42 +59,62 @@ class LongTermMemory(LongTermMemoryInterface):
     - Backup and restore functionality
     - Async operations for better performance
     """
-    
+
     def __init__(self, config: Optional[LongTermMemoryConfig] = None):
         """
         Initialize the long-term memory system.
-        
+
         Args:
             config: Configuration for long-term memory
         """
         self.config = config or LongTermMemoryConfig()
         self.storage_path = Path(self.config.storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize embedding model
-        logger.info(f"Initializing embedding model {self.config.embedding_model} on {self.config.device}")
-        self.embedding_model = SentenceTransformer(
-            self.config.embedding_model, 
-            device=self.config.device
+        logger.info(
+            f"Initializing embedding model {self.config.embedding_model} on {self.config.device}"
         )
-        
+        self.embedding_model = SentenceTransformer(
+            self.config.embedding_model, device=self.config.device
+        )
+
         # Initialize vector database
         self._init_vector_db()
-        
+
         # Initialize metadata storage
         self.metadata_path = self.storage_path / "metadata.json"
         self.metadata = self._load_metadata()
-        
-        logger.info(f"LongTermMemory initialized with {len(self.metadata.get('memories', {}))} memories")
-    
+
+        logger.info(
+            f"LongTermMemory initialized with {len(self.metadata.get('memories', {}))} memories"
+        )
+
     def _init_vector_db(self) -> None:
         """Initialize the vector database based on configuration."""
         if self.config.vector_db_type == "chroma" and CHROMA_AVAILABLE:
             logger.info(f"Initializing ChromaDB at {self.storage_path}")
+
+            # Clear SSL environment variable to avoid certificate issues
+            import os
+
+            if "SSL_CERT_FILE" in os.environ:
+                del os.environ["SSL_CERT_FILE"]
+
+            # Use ChromaDB 1.0+ PersistentClient API
             self.vector_db = chromadb.PersistentClient(path=str(self.storage_path))
+
+            # Use SentenceTransformer embedding function to avoid SSL issues
+            from chromadb.utils import embedding_functions
+
+            sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name=self.config.embedding_model
+            )
+
             self.collection = self.vector_db.get_or_create_collection(
                 name="memories",
-                metadata={"description": "Coda's long-term memories"}
+                metadata={"description": "Coda's long-term memories"},
+                embedding_function=sentence_transformer_ef,
             )
         elif self.config.vector_db_type == "sqlite" and SQLITE_AVAILABLE:
             logger.info(f"Initializing SQLite vector database at {self.storage_path}")
@@ -105,11 +127,12 @@ class LongTermMemory(LongTermMemoryInterface):
             self.vectors: Dict[str, np.ndarray] = {}
             self.contents: Dict[str, str] = {}
             self.vector_metadata: Dict[str, Dict[str, Any]] = {}
-    
+
     def _init_sqlite_db(self) -> None:
         """Initialize SQLite database schema."""
         cursor = self.conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS memories (
                 id TEXT PRIMARY KEY,
                 content TEXT NOT NULL,
@@ -118,24 +141,29 @@ class LongTermMemory(LongTermMemoryInterface):
                 importance REAL NOT NULL,
                 metadata TEXT NOT NULL
             )
-        """)
-        cursor.execute("""
+        """
+        )
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_timestamp ON memories(timestamp)
-        """)
-        cursor.execute("""
+        """
+        )
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_importance ON memories(importance)
-        """)
+        """
+        )
         self.conn.commit()
-    
+
     def _load_metadata(self) -> Dict[str, Any]:
         """Load metadata from disk."""
         if self.metadata_path.exists():
             try:
-                with open(self.metadata_path, 'r', encoding='utf-8') as f:
+                with open(self.metadata_path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load metadata: {e}")
-        
+
         return {
             "version": "2.0.0",
             "created_at": datetime.now().isoformat(),
@@ -143,43 +171,44 @@ class LongTermMemory(LongTermMemoryInterface):
             "memory_count": 0,
             "last_cleanup": None,
         }
-    
+
     def _save_metadata(self) -> None:
         """Save metadata to disk."""
         try:
-            with open(self.metadata_path, 'w', encoding='utf-8') as f:
+            with open(self.metadata_path, "w", encoding="utf-8") as f:
                 json.dump(self.metadata, f, indent=2, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Failed to save metadata: {e}")
-    
-    async def store_memory(self, content: str, memory_type: MemoryType, 
-                          importance: float, metadata: Dict[str, Any]) -> str:
+
+    async def store_memory(
+        self, content: str, memory_type: MemoryType, importance: float, metadata: Dict[str, Any]
+    ) -> str:
         """
         Store a memory with vector embedding.
-        
+
         Args:
             content: The memory content
             memory_type: Type of memory
             importance: Importance score (0.0 to 1.0)
             metadata: Additional metadata
-            
+
         Returns:
             The generated memory ID
         """
         memory_id = str(uuid.uuid4())
         timestamp = datetime.now()
-        
+
         # Create memory metadata
         memory_metadata = MemoryMetadata(
             source_type=memory_type,
             timestamp=timestamp,
             importance=max(0.0, min(1.0, importance)),
-            **metadata
+            **metadata,
         )
-        
+
         # Generate embedding
         embedding = await self._generate_embedding(content)
-        
+
         # Create memory object
         memory = Memory(
             id=memory_id,
@@ -188,53 +217,52 @@ class LongTermMemory(LongTermMemoryInterface):
             embedding=embedding.tolist() if isinstance(embedding, np.ndarray) else embedding,
             created_at=timestamp,
             accessed_at=timestamp,
-            access_count=0
+            access_count=0,
         )
-        
+
         # Store in vector database
         await self._store_in_vector_db(memory)
-        
+
         # Update metadata
         self.metadata["memories"][memory_id] = {
             "content_preview": content[:100] + "..." if len(content) > 100 else content,
             "timestamp": timestamp.isoformat(),
             "importance": importance,
             "memory_type": memory_type.value,
-            "metadata": metadata
+            "metadata": metadata,
         }
         self.metadata["memory_count"] = len(self.metadata["memories"])
         self._save_metadata()
-        
-        logger.info(f"Stored memory {memory_id} ({len(content)} chars, importance={importance:.2f})")
-        
+
+        logger.info(
+            f"Stored memory {memory_id} ({len(content)} chars, importance={importance:.2f})"
+        )
+
         # Check if we need to prune memories
         if self.metadata["memory_count"] > self.config.max_memories:
             await self._prune_memories()
-        
+
         return memory_id
-    
+
     async def _generate_embedding(self, content: str) -> np.ndarray:
         """Generate embedding for content."""
         # Run embedding generation in thread pool to avoid blocking
-        loop = asyncio.get_event_loop()
-        embedding = await loop.run_in_executor(
-            None, 
-            self.embedding_model.encode, 
-            content
+        embedding = await asyncio.get_running_loop().run_in_executor(
+            None, self.embedding_model.encode, content
         )
         return embedding
-    
+
     async def _store_in_vector_db(self, memory: Memory) -> None:
         """Store memory in the vector database."""
-        if self.config.vector_db_type == "chroma" and hasattr(self, 'collection'):
+        if self.config.vector_db_type == "chroma" and hasattr(self, "collection"):
             # ChromaDB storage
             self.collection.add(
                 ids=[memory.id],
                 embeddings=[memory.embedding],
                 metadatas=[memory.metadata.model_dump()],
-                documents=[memory.content]
+                documents=[memory.content],
             )
-        elif self.config.vector_db_type == "sqlite" and hasattr(self, 'conn'):
+        elif self.config.vector_db_type == "sqlite" and hasattr(self, "conn"):
             # SQLite storage
             cursor = self.conn.cursor()
             embedding_bytes = np.array(memory.embedding).tobytes()
@@ -246,8 +274,8 @@ class LongTermMemory(LongTermMemoryInterface):
                     embedding_bytes,
                     memory.created_at.isoformat(),
                     memory.metadata.importance,
-                    json.dumps(memory.metadata.model_dump())
-                )
+                    json.dumps(memory.metadata.model_dump()),
+                ),
             )
             self.conn.commit()
         else:
@@ -255,62 +283,62 @@ class LongTermMemory(LongTermMemoryInterface):
             self.vectors[memory.id] = np.array(memory.embedding)
             self.contents[memory.id] = memory.content
             self.vector_metadata[memory.id] = memory.metadata.model_dump()
-    
+
     async def retrieve_memories(self, query: MemoryQuery) -> List[MemoryResult]:
         """
         Retrieve memories based on query parameters.
-        
+
         Args:
             query: Memory query parameters
-            
+
         Returns:
             List of memory results with relevance scores
         """
         # Generate query embedding
         query_embedding = await self._generate_embedding(query.query)
-        
+
         # Retrieve from vector database
-        if self.config.vector_db_type == "chroma" and hasattr(self, 'collection'):
+        if self.config.vector_db_type == "chroma" and hasattr(self, "collection"):
             results = await self._query_chroma(query_embedding, query)
-        elif self.config.vector_db_type == "sqlite" and hasattr(self, 'conn'):
+        elif self.config.vector_db_type == "sqlite" and hasattr(self, "conn"):
             results = await self._query_sqlite(query_embedding, query)
         else:
             results = await self._query_memory(query_embedding, query)
-        
+
         # Apply time decay and filtering
         filtered_results = []
         for result in results:
             # Calculate time decay factor
             time_decay = self._calculate_time_decay(result.memory.created_at)
-            
+
             # Calculate final score
             final_score = result.relevance_score * time_decay * result.memory.metadata.importance
-            
+
             # Apply minimum relevance filter
             if final_score >= query.min_relevance:
                 result.time_decay_factor = time_decay
                 result.final_score = final_score
                 filtered_results.append(result)
-        
+
         # Sort by final score and limit results
         filtered_results.sort(key=lambda r: r.final_score, reverse=True)
-        return filtered_results[:query.limit]
+        return filtered_results[: query.limit]
 
-    async def _query_chroma(self, query_embedding: np.ndarray, query: MemoryQuery) -> List[MemoryResult]:
+    async def _query_chroma(
+        self, query_embedding: np.ndarray, query: MemoryQuery
+    ) -> List[MemoryResult]:
         """Query ChromaDB for similar memories."""
         try:
             results = self.collection.query(
                 query_embeddings=[query_embedding.tolist()],
                 n_results=min(query.limit * 2, 50),  # Get more results for filtering
-                include=["documents", "metadatas", "distances"]
+                include=["documents", "metadatas", "distances"],
             )
 
             memory_results = []
-            for i, (doc, metadata, distance) in enumerate(zip(
-                results["documents"][0],
-                results["metadatas"][0],
-                results["distances"][0]
-            )):
+            for i, (doc, metadata, distance) in enumerate(
+                zip(results["documents"][0], results["metadatas"][0], results["distances"][0])
+            ):
                 # Convert distance to similarity score (ChromaDB uses cosine distance)
                 similarity = 1.0 - distance
 
@@ -322,15 +350,17 @@ class LongTermMemory(LongTermMemoryInterface):
                     metadata=memory_metadata,
                     created_at=memory_metadata.timestamp,
                     accessed_at=datetime.now(),
-                    access_count=0
+                    access_count=0,
                 )
 
-                memory_results.append(MemoryResult(
-                    memory=memory,
-                    relevance_score=similarity,
-                    time_decay_factor=1.0,  # Will be calculated later
-                    final_score=similarity
-                ))
+                memory_results.append(
+                    MemoryResult(
+                        memory=memory,
+                        relevance_score=similarity,
+                        time_decay_factor=1.0,  # Will be calculated later
+                        final_score=similarity,
+                    )
+                )
 
             return memory_results
 
@@ -338,11 +368,15 @@ class LongTermMemory(LongTermMemoryInterface):
             logger.error(f"Error querying ChromaDB: {e}")
             return []
 
-    async def _query_sqlite(self, query_embedding: np.ndarray, query: MemoryQuery) -> List[MemoryResult]:
+    async def _query_sqlite(
+        self, query_embedding: np.ndarray, query: MemoryQuery
+    ) -> List[MemoryResult]:
         """Query SQLite database for similar memories."""
         try:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT id, content, embedding, timestamp, importance, metadata FROM memories")
+            cursor.execute(
+                "SELECT id, content, embedding, timestamp, importance, metadata FROM memories"
+            )
             rows = cursor.fetchall()
 
             memory_results = []
@@ -366,15 +400,17 @@ class LongTermMemory(LongTermMemoryInterface):
                     metadata=memory_metadata,
                     created_at=datetime.fromisoformat(timestamp_str),
                     accessed_at=datetime.now(),
-                    access_count=0
+                    access_count=0,
                 )
 
-                memory_results.append(MemoryResult(
-                    memory=memory,
-                    relevance_score=similarity,
-                    time_decay_factor=1.0,  # Will be calculated later
-                    final_score=similarity
-                ))
+                memory_results.append(
+                    MemoryResult(
+                        memory=memory,
+                        relevance_score=similarity,
+                        time_decay_factor=1.0,  # Will be calculated later
+                        final_score=similarity,
+                    )
+                )
 
             return memory_results
 
@@ -382,7 +418,9 @@ class LongTermMemory(LongTermMemoryInterface):
             logger.error(f"Error querying SQLite: {e}")
             return []
 
-    async def _query_memory(self, query_embedding: np.ndarray, query: MemoryQuery) -> List[MemoryResult]:
+    async def _query_memory(
+        self, query_embedding: np.ndarray, query: MemoryQuery
+    ) -> List[MemoryResult]:
         """Query in-memory storage for similar memories."""
         memory_results = []
 
@@ -402,15 +440,20 @@ class LongTermMemory(LongTermMemoryInterface):
                 metadata=memory_metadata,
                 created_at=memory_metadata.timestamp,
                 accessed_at=datetime.now(),
-                access_count=0
+                access_count=0,
             )
 
-            memory_results.append(MemoryResult(
-                memory=memory,
-                relevance_score=similarity,
-                time_decay_factor=1.0,  # Will be calculated later
-                final_score=similarity
-            ))
+            # Clamp similarity to [0, 1] to handle floating point precision issues
+            clamped_similarity = max(0.0, min(1.0, similarity))
+
+            memory_results.append(
+                MemoryResult(
+                    memory=memory,
+                    relevance_score=clamped_similarity,
+                    time_decay_factor=1.0,  # Will be calculated later
+                    final_score=clamped_similarity,
+                )
+            )
 
         return memory_results
 
@@ -443,7 +486,7 @@ class LongTermMemory(LongTermMemoryInterface):
             return None
 
         try:
-            if self.config.vector_db_type == "chroma" and hasattr(self, 'collection'):
+            if self.config.vector_db_type == "chroma" and hasattr(self, "collection"):
                 results = self.collection.get(ids=[memory_id], include=["documents", "metadatas"])
                 if results["ids"]:
                     doc = results["documents"][0]
@@ -456,16 +499,16 @@ class LongTermMemory(LongTermMemoryInterface):
                         metadata=memory_metadata,
                         created_at=memory_metadata.timestamp,
                         accessed_at=datetime.now(),
-                        access_count=0
+                        access_count=0,
                     )
                     memory.update_access()
                     return memory
 
-            elif self.config.vector_db_type == "sqlite" and hasattr(self, 'conn'):
+            elif self.config.vector_db_type == "sqlite" and hasattr(self, "conn"):
                 cursor = self.conn.cursor()
                 cursor.execute(
                     "SELECT content, timestamp, importance, metadata FROM memories WHERE id = ?",
-                    (memory_id,)
+                    (memory_id,),
                 )
                 row = cursor.fetchone()
                 if row:
@@ -479,7 +522,7 @@ class LongTermMemory(LongTermMemoryInterface):
                         metadata=memory_metadata,
                         created_at=datetime.fromisoformat(timestamp_str),
                         accessed_at=datetime.now(),
-                        access_count=0
+                        access_count=0,
                     )
                     memory.update_access()
                     return memory
@@ -497,7 +540,7 @@ class LongTermMemory(LongTermMemoryInterface):
                         metadata=memory_metadata,
                         created_at=memory_metadata.timestamp,
                         accessed_at=datetime.now(),
-                        access_count=0
+                        access_count=0,
                     )
                     memory.update_access()
                     return memory
@@ -507,9 +550,13 @@ class LongTermMemory(LongTermMemoryInterface):
 
         return None
 
-    async def update_memory(self, memory_id: str, content: Optional[str] = None,
-                           importance: Optional[float] = None,
-                           metadata: Optional[Dict[str, Any]] = None) -> bool:
+    async def update_memory(
+        self,
+        memory_id: str,
+        content: Optional[str] = None,
+        importance: Optional[float] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
         """Update an existing memory."""
         memory = await self.get_memory(memory_id)
         if not memory:
@@ -532,11 +579,17 @@ class LongTermMemory(LongTermMemoryInterface):
             await self._store_in_vector_db(memory)
 
             # Update metadata
-            self.metadata["memories"][memory_id].update({
-                "content_preview": memory.content[:100] + "..." if len(memory.content) > 100 else memory.content,
-                "importance": memory.metadata.importance,
-                "metadata": memory.metadata.additional
-            })
+            self.metadata["memories"][memory_id].update(
+                {
+                    "content_preview": (
+                        memory.content[:100] + "..."
+                        if len(memory.content) > 100
+                        else memory.content
+                    ),
+                    "importance": memory.metadata.importance,
+                    "metadata": memory.metadata.additional,
+                }
+            )
             self._save_metadata()
 
             logger.info(f"Updated memory {memory_id}")
@@ -553,9 +606,9 @@ class LongTermMemory(LongTermMemoryInterface):
 
         try:
             # Delete from vector database
-            if self.config.vector_db_type == "chroma" and hasattr(self, 'collection'):
+            if self.config.vector_db_type == "chroma" and hasattr(self, "collection"):
                 self.collection.delete(ids=[memory_id])
-            elif self.config.vector_db_type == "sqlite" and hasattr(self, 'conn'):
+            elif self.config.vector_db_type == "sqlite" and hasattr(self, "conn"):
                 cursor = self.conn.cursor()
                 cursor.execute("DELETE FROM memories WHERE id = ?", (memory_id,))
                 self.conn.commit()
@@ -622,7 +675,11 @@ class LongTermMemory(LongTermMemoryInterface):
 
         return MemoryStats(
             total_memories=len(memories),
-            memory_types={MemoryType(k): v for k, v in memory_types.items() if k in [t.value for t in MemoryType]},
+            memory_types={
+                MemoryType(k): v
+                for k, v in memory_types.items()
+                if k in [t.value for t in MemoryType]
+            },
             average_importance=total_importance / len(memories),
             oldest_memory=oldest_timestamp,
             newest_memory=newest_timestamp,
@@ -681,8 +738,8 @@ class LongTermMemory(LongTermMemoryInterface):
 
         # Sort by score and keep only the top memories
         memory_scores.sort(key=lambda x: x[1], reverse=True)
-        memories_to_keep = memory_scores[:self.config.max_memories]
-        memories_to_delete = memory_scores[self.config.max_memories:]
+        memories_to_keep = memory_scores[: self.config.max_memories]
+        memories_to_delete = memory_scores[self.config.max_memories :]
 
         # Delete excess memories
         deleted_count = 0
@@ -690,7 +747,9 @@ class LongTermMemory(LongTermMemoryInterface):
             if await self.delete_memory(memory_id):
                 deleted_count += 1
 
-        logger.info(f"Pruned {deleted_count} memories to stay within limit of {self.config.max_memories}")
+        logger.info(
+            f"Pruned {deleted_count} memories to stay within limit of {self.config.max_memories}"
+        )
 
     async def backup_memories(self, backup_path: str) -> bool:
         """Backup memories to a file."""
@@ -700,25 +759,27 @@ class LongTermMemory(LongTermMemoryInterface):
                 "timestamp": datetime.now().isoformat(),
                 "config": self.config.model_dump(),
                 "metadata": self.metadata,
-                "memories": []
+                "memories": [],
             }
 
             # Export all memories
             for memory_id in self.metadata.get("memories", {}):
                 memory = await self.get_memory(memory_id)
                 if memory:
-                    backup_data["memories"].append({
-                        "id": memory.id,
-                        "content": memory.content,
-                        "metadata": memory.metadata.model_dump(),
-                        "embedding": memory.embedding,
-                        "created_at": memory.created_at.isoformat(),
-                        "accessed_at": memory.accessed_at.isoformat(),
-                        "access_count": memory.access_count,
-                    })
+                    backup_data["memories"].append(
+                        {
+                            "id": memory.id,
+                            "content": memory.content,
+                            "metadata": memory.metadata.model_dump(),
+                            "embedding": memory.embedding,
+                            "created_at": memory.created_at.isoformat(),
+                            "accessed_at": memory.accessed_at.isoformat(),
+                            "access_count": memory.access_count,
+                        }
+                    )
 
             # Write backup file
-            with open(backup_path, 'w', encoding='utf-8') as f:
+            with open(backup_path, "w", encoding="utf-8") as f:
                 json.dump(backup_data, f, indent=2, ensure_ascii=False)
 
             logger.info(f"Backed up {len(backup_data['memories'])} memories to {backup_path}")
@@ -731,7 +792,7 @@ class LongTermMemory(LongTermMemoryInterface):
     async def restore_memories(self, backup_path: str) -> int:
         """Restore memories from a backup file."""
         try:
-            with open(backup_path, 'r', encoding='utf-8') as f:
+            with open(backup_path, "r", encoding="utf-8") as f:
                 backup_data = json.load(f)
 
             restored_count = 0
@@ -754,17 +815,23 @@ class LongTermMemory(LongTermMemoryInterface):
 
                     # Update metadata
                     self.metadata["memories"][memory.id] = {
-                        "content_preview": memory.content[:100] + "..." if len(memory.content) > 100 else memory.content,
+                        "content_preview": (
+                            memory.content[:100] + "..."
+                            if len(memory.content) > 100
+                            else memory.content
+                        ),
                         "timestamp": memory.created_at.isoformat(),
                         "importance": memory.metadata.importance,
                         "memory_type": memory.metadata.source_type.value,
-                        "metadata": memory.metadata.additional
+                        "metadata": memory.metadata.additional,
                     }
 
                     restored_count += 1
 
                 except Exception as e:
-                    logger.warning(f"Failed to restore memory {memory_data.get('id', 'unknown')}: {e}")
+                    logger.warning(
+                        f"Failed to restore memory {memory_data.get('id', 'unknown')}: {e}"
+                    )
                     continue
 
             # Update metadata

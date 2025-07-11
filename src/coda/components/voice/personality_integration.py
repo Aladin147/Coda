@@ -1,31 +1,31 @@
 """
-Voice-Personality Integration
+Voice - Personality Integration
 
 This module provides comprehensive integration between the voice processing system
-and the personality manager for adaptive, context-aware responses that reflect
+and the personality manager for adaptive, context - aware responses that reflect
 the assistant's personality and evolve based on conversation feedback.
 """
 
-import asyncio
 import logging
-import time
-from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
-from .models import VoiceMessage, VoiceResponse, ConversationState
 from ..personality.interfaces import PersonalityManagerInterface
 from ..personality.models import (
-    PersonalityParameters, PersonalityTraitType, PersonalityAdjustment,
-    BehaviorPattern
+    BehaviorPattern,
+    PersonalityAdjustment,
+    PersonalityParameters,
+    PersonalityTraitType,
 )
+from .models import ConversationState, VoiceMessage, VoiceResponse
 
 logger = logging.getLogger("coda.voice.personality_integration")
 
 
 @dataclass
 class VoicePersonalityConfig:
-    """Configuration for voice-personality integration."""
+    """Configuration for voice - personality integration."""
 
     # Personality injection
     enable_personality_injection: bool = True
@@ -45,7 +45,7 @@ class VoicePersonalityConfig:
     learn_from_conversation_flow: bool = True
     adjustment_sensitivity: float = 0.1  # How quickly personality adapts
 
-    # Voice-specific traits
+    # Voice - specific traits
     enable_voice_traits: bool = True
     voice_confidence_factor: float = 1.2  # Voice interactions boost confidence
     voice_engagement_factor: float = 1.1  # Voice interactions boost engagement
@@ -60,19 +60,17 @@ class VoicePersonalityIntegration:
     Comprehensive integration between voice processing and personality systems.
 
     Features:
-    - Personality-aware response generation
+    - Personality - aware response generation
     - Dynamic personality adaptation based on voice interactions
     - Speaking style and tone adjustment
     - Conversation flow analysis for personality learning
-    - Voice-specific personality trait evolution
+    - Voice - specific personality trait evolution
     """
 
     def __init__(
-        self,
-        personality_manager: PersonalityManagerInterface,
-        config: VoicePersonalityConfig
+        self, personality_manager: PersonalityManagerInterface, config: VoicePersonalityConfig
     ):
-        """Initialize voice-personality integration."""
+        """Initialize voice - personality integration."""
         self.personality_manager = personality_manager
         self.config = config
 
@@ -86,7 +84,7 @@ class VoicePersonalityIntegration:
             "response_adaptations": 0,
             "personality_adjustments": 0,
             "cache_hits": 0,
-            "voice_interactions": 0
+            "voice_interactions": 0,
         }
 
         # Voice interaction tracking
@@ -95,9 +93,7 @@ class VoicePersonalityIntegration:
         logger.info("VoicePersonalityIntegration initialized")
 
     async def enhance_voice_context(
-        self,
-        voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        self, voice_message: VoiceMessage, conversation_state: Optional[ConversationState] = None
     ) -> Dict[str, Any]:
         """
         Enhance voice processing context with personality information.
@@ -138,7 +134,7 @@ class VoicePersonalityIntegration:
         self,
         voice_response: VoiceResponse,
         voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        conversation_state: Optional[ConversationState] = None,
     ) -> VoiceResponse:
         """
         Adapt voice response based on personality and conversation context.
@@ -149,7 +145,7 @@ class VoicePersonalityIntegration:
             conversation_state: Current conversation state
 
         Returns:
-            Personality-adapted voice response
+            Personality - adapted voice response
         """
 
         try:
@@ -161,9 +157,7 @@ class VoicePersonalityIntegration:
 
             # Adapt response text
             adapted_text = await self._adapt_response_text(
-                voice_response.text_content or "",
-                personality_params,
-                voice_message
+                voice_response.text_content or "", personality_params, voice_message
             )
 
             # Create adapted response
@@ -177,7 +171,7 @@ class VoicePersonalityIntegration:
                 total_latency_ms=voice_response.total_latency_ms,
                 moshi_latency_ms=voice_response.moshi_latency_ms,
                 llm_latency_ms=voice_response.llm_latency_ms,
-                response_relevance=voice_response.response_relevance
+                response_relevance=voice_response.response_relevance,
             )
 
             self.stats["response_adaptations"] += 1
@@ -193,7 +187,7 @@ class VoicePersonalityIntegration:
         voice_message: VoiceMessage,
         voice_response: VoiceResponse,
         conversation_state: Optional[ConversationState] = None,
-        user_feedback: Optional[Dict[str, Any]] = None
+        user_feedback: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Learn and adapt personality based on voice interaction.
@@ -223,7 +217,7 @@ class VoicePersonalityIntegration:
             if self.config.learn_from_conversation_flow:
                 await self._learn_from_conversation_flow(voice_message, voice_response)
 
-            # Apply voice-specific personality adjustments
+            # Apply voice - specific personality adjustments
             if self.config.enable_voice_traits:
                 await self._apply_voice_trait_adjustments(voice_message, voice_response)
 
@@ -243,14 +237,13 @@ class VoicePersonalityIntegration:
                 "speaking_style": {},
                 "current_state": {},
                 "behavior_patterns": [],
-                "voice_adaptations": {}
+                "voice_adaptations": {},
             }
 
             # Extract trait values
             if self.config.include_trait_values:
                 personality_context["traits"] = {
-                    trait.name: trait.current_value
-                    for trait in personality_params.traits
+                    trait.name: trait.current_value for trait in personality_params.traits
                 }
 
             # Extract speaking style parameters
@@ -259,7 +252,9 @@ class VoicePersonalityIntegration:
                     "formality": personality_context["traits"].get("formality", 0.5),
                     "enthusiasm": personality_context["traits"].get("enthusiasm", 0.7),
                     "verbosity": personality_context["traits"].get("verbosity", 0.6),
-                    "technical_depth": personality_context["traits"].get("technical_expertise", 0.8)
+                    "technical_depth": personality_context["traits"].get(
+                        "technical_expertise", 0.8
+                    ),
                 }
 
             # Get current personality state
@@ -267,19 +262,21 @@ class VoicePersonalityIntegration:
                 "mood": "engaged",  # This would come from personality manager
                 "energy_level": 0.8,
                 "confidence": personality_context["traits"].get("confidence", 0.7),
-                "adaptability": personality_context["traits"].get("adaptability", 0.6)
+                "adaptability": personality_context["traits"].get("adaptability", 0.6),
             }
 
-            # Voice-specific adaptations
+            # Voice - specific adaptations
             if self.config.enable_voice_traits:
                 personality_context["voice_adaptations"] = {
                     "voice_confidence_boost": self.config.voice_confidence_factor,
                     "voice_engagement_boost": self.config.voice_engagement_factor,
-                    "prefers_voice_interaction": True
+                    "prefers_voice_interaction": True,
                 }
 
             # Generate personality description
-            personality_context["description"] = self._generate_personality_description(personality_context)
+            personality_context["description"] = self._generate_personality_description(
+                personality_context
+            )
 
             return personality_context
 
@@ -297,31 +294,51 @@ class VoicePersonalityIntegration:
             class MockPersonalityParameters:
                 def __init__(self):
                     self.traits = [
-                        type('Trait', (), {
-                            'name': 'empathy',
-                            'current_value': 0.9,
-                            'trait_type': PersonalityTraitType.EMPATHY
-                        })(),
-                        type('Trait', (), {
-                            'name': 'enthusiasm',
-                            'current_value': 0.8,
-                            'trait_type': PersonalityTraitType.ENTHUSIASM
-                        })(),
-                        type('Trait', (), {
-                            'name': 'formality',
-                            'current_value': 0.3,
-                            'trait_type': PersonalityTraitType.FORMALITY
-                        })(),
-                        type('Trait', (), {
-                            'name': 'analytical',
-                            'current_value': 0.85,
-                            'trait_type': PersonalityTraitType.ANALYTICAL
-                        })(),
-                        type('Trait', (), {
-                            'name': 'confidence',
-                            'current_value': 0.75,
-                            'trait_type': PersonalityTraitType.CONFIDENCE
-                        })()
+                        type(
+                            "Trait",
+                            (),
+                            {
+                                "name": "empathy",
+                                "current_value": 0.9,
+                                "trait_type": PersonalityTraitType.EMPATHY,
+                            },
+                        )(),
+                        type(
+                            "Trait",
+                            (),
+                            {
+                                "name": "enthusiasm",
+                                "current_value": 0.8,
+                                "trait_type": PersonalityTraitType.ENTHUSIASM,
+                            },
+                        )(),
+                        type(
+                            "Trait",
+                            (),
+                            {
+                                "name": "formality",
+                                "current_value": 0.3,
+                                "trait_type": PersonalityTraitType.FORMALITY,
+                            },
+                        )(),
+                        type(
+                            "Trait",
+                            (),
+                            {
+                                "name": "analytical",
+                                "current_value": 0.85,
+                                "trait_type": PersonalityTraitType.ANALYTICAL,
+                            },
+                        )(),
+                        type(
+                            "Trait",
+                            (),
+                            {
+                                "name": "confidence",
+                                "current_value": 0.75,
+                                "trait_type": PersonalityTraitType.CONFIDENCE,
+                            },
+                        )(),
                     ]
 
             return MockPersonalityParameters()
@@ -331,10 +348,7 @@ class VoicePersonalityIntegration:
             return None
 
     async def _adapt_response_text(
-        self,
-        response_text: str,
-        personality_params: Any,
-        voice_message: VoiceMessage
+        self, response_text: str, personality_params: Any, voice_message: VoiceMessage
     ) -> str:
         """Adapt response text based on personality parameters."""
 
@@ -363,7 +377,7 @@ class VoicePersonalityIntegration:
                 elif enthusiasm < 0.4:  # Low enthusiasm
                     adapted_text = self._reduce_enthusiasm(adapted_text)
 
-            # Apply voice-specific adaptations
+            # Apply voice - specific adaptations
             if self.config.enable_voice_traits:
                 adapted_text = self._apply_voice_adaptations(adapted_text, traits)
 
@@ -384,7 +398,7 @@ class VoicePersonalityIntegration:
             "will not": "won't",
             "However,": "But",
             "Therefore,": "So",
-            "Additionally,": "Also"
+            "Additionally,": "Also",
         }
 
         adapted_text = text
@@ -404,7 +418,7 @@ class VoicePersonalityIntegration:
             "won't": "will not",
             "But": "However,",
             "So": "Therefore,",
-            "Also": "Additionally"
+            "Also": "Additionally",
         }
 
         adapted_text = text
@@ -416,21 +430,18 @@ class VoicePersonalityIntegration:
     def _add_enthusiasm(self, text: str) -> str:
         """Add enthusiasm to text."""
         # Add enthusiasm markers
-        if not text.endswith(('!', '?', '.')):
-            text += '!'
-        elif text.endswith('.'):
-            text = text[:-1] + '!'
+        if not text.endswith(("!", "?", ".")):
+            text += "!"
+        elif text.endswith("."):
+            text = text[:-1] + "!"
 
         # Add enthusiastic phrases
-        enthusiastic_starters = [
-            "Great question! ",
-            "Absolutely! ",
-            "Fantastic! ",
-            "Excellent! "
-        ]
+        enthusiastic_starters = ["Great question! ", "Absolutely! ", "Fantastic! ", "Excellent! "]
 
         # Randomly add enthusiasm (simplified)
-        if len(text) > 50 and not any(text.startswith(starter) for starter in enthusiastic_starters):
+        if len(text) > 50 and not any(
+            text.startswith(starter) for starter in enthusiastic_starters
+        ):
             text = "Great! " + text
 
         return text
@@ -438,8 +449,8 @@ class VoicePersonalityIntegration:
     def _reduce_enthusiasm(self, text: str) -> str:
         """Reduce enthusiasm in text."""
         # Remove excessive exclamation marks
-        text = text.replace('!!', '.')
-        text = text.replace('!', '.')
+        text = text.replace("!!", ".")
+        text = text.replace("!", ".")
 
         # Remove enthusiastic starters
         enthusiastic_starters = [
@@ -447,18 +458,18 @@ class VoicePersonalityIntegration:
             "Absolutely! ",
             "Fantastic! ",
             "Excellent! ",
-            "Great! "
+            "Great! ",
         ]
 
         for starter in enthusiastic_starters:
             if text.startswith(starter):
-                text = text[len(starter):]
+                text = text[len(starter) :]
                 break
 
         return text
 
     def _apply_voice_adaptations(self, text: str, traits: Dict[str, float]) -> str:
-        """Apply voice-specific adaptations."""
+        """Apply voice - specific adaptations."""
 
         # Voice interactions tend to be more conversational
         confidence = traits.get("confidence", 0.7) * self.config.voice_confidence_factor
@@ -521,9 +532,7 @@ class VoicePersonalityIntegration:
         return f"Assistant personality: {', '.join(description_parts)}."
 
     async def _record_conversation_flow(
-        self,
-        voice_message: VoiceMessage,
-        voice_response: VoiceResponse
+        self, voice_message: VoiceMessage, voice_response: VoiceResponse
     ) -> None:
         """Record conversation flow for learning."""
 
@@ -538,20 +547,22 @@ class VoicePersonalityIntegration:
             "response_length": len(voice_response.text_content or ""),
             "response_latency": voice_response.total_latency_ms,
             "response_relevance": voice_response.response_relevance or 0.5,
-            "processing_mode": voice_response.processing_mode.value
+            "processing_mode": voice_response.processing_mode.value,
         }
 
         self.conversation_flows[conversation_id].append(flow_entry)
 
         # Keep only recent flow entries
         if len(self.conversation_flows[conversation_id]) > 50:
-            self.conversation_flows[conversation_id] = self.conversation_flows[conversation_id][-50:]
+            self.conversation_flows[conversation_id] = self.conversation_flows[conversation_id][
+                -50:
+            ]
 
     async def _learn_from_user_feedback(
         self,
         voice_message: VoiceMessage,
         voice_response: VoiceResponse,
-        user_feedback: Dict[str, Any]
+        user_feedback: Dict[str, Any],
     ) -> None:
         """Learn from explicit user feedback."""
 
@@ -583,9 +594,7 @@ class VoicePersonalityIntegration:
             logger.error(f"Failed to learn from user feedback: {e}")
 
     async def _learn_from_conversation_flow(
-        self,
-        voice_message: VoiceMessage,
-        voice_response: VoiceResponse
+        self, voice_message: VoiceMessage, voice_response: VoiceResponse
     ) -> None:
         """Learn from conversation flow patterns."""
 
@@ -618,42 +627,47 @@ class VoicePersonalityIntegration:
 
             # Apply adjustments
             for trait_name, adjustment in adjustments:
-                await self._apply_personality_adjustment(trait_name, adjustment, "conversation_flow")
+                await self._apply_personality_adjustment(
+                    trait_name, adjustment, "conversation_flow"
+                )
 
             if adjustments:
-                logger.debug(f"Applied {len(adjustments)} personality adjustments from conversation flow")
+                logger.debug(
+                    f"Applied {len(adjustments)} personality adjustments from conversation flow"
+                )
 
         except Exception as e:
             logger.error(f"Failed to learn from conversation flow: {e}")
 
     async def _apply_voice_trait_adjustments(
-        self,
-        voice_message: VoiceMessage,
-        voice_response: VoiceResponse
+        self, voice_message: VoiceMessage, voice_response: VoiceResponse
     ) -> None:
-        """Apply voice-specific personality trait adjustments."""
+        """Apply voice - specific personality trait adjustments."""
 
         try:
             # Voice interactions boost confidence and engagement
             confidence_boost = self.config.adjustment_sensitivity * 0.2
             engagement_boost = self.config.adjustment_sensitivity * 0.1
 
-            await self._apply_personality_adjustment("confidence", confidence_boost, "voice_interaction")
-            await self._apply_personality_adjustment("engagement", engagement_boost, "voice_interaction")
+            await self._apply_personality_adjustment(
+                "confidence", confidence_boost, "voice_interaction"
+            )
+            await self._apply_personality_adjustment(
+                "engagement", engagement_boost, "voice_interaction"
+            )
 
             # Successful voice interactions (high relevance) boost enthusiasm
             if voice_response.response_relevance and voice_response.response_relevance > 0.8:
                 enthusiasm_boost = self.config.adjustment_sensitivity * 0.15
-                await self._apply_personality_adjustment("enthusiasm", enthusiasm_boost, "successful_voice_interaction")
+                await self._apply_personality_adjustment(
+                    "enthusiasm", enthusiasm_boost, "successful_voice_interaction"
+                )
 
         except Exception as e:
             logger.error(f"Failed to apply voice trait adjustments: {e}")
 
     async def _apply_personality_adjustment(
-        self,
-        trait_name: str,
-        adjustment: float,
-        source: str
+        self, trait_name: str, adjustment: float, source: str
     ) -> None:
         """Apply a personality trait adjustment."""
 
@@ -663,7 +677,9 @@ class VoicePersonalityIntegration:
 
             self.stats["personality_adjustments"] += 1
 
-            logger.debug(f"Personality adjustment: {trait_name} {adjustment:+.3f} (source: {source})")
+            logger.debug(
+                f"Personality adjustment: {trait_name} {adjustment:+.3f} (source: {source})"
+            )
 
             # In a real implementation, this would call:
             # await self.personality_manager.adjust_trait(trait_name, adjustment, source)
@@ -702,8 +718,7 @@ class VoicePersonalityIntegration:
         ttl = timedelta(minutes=self.config.personality_cache_ttl_minutes)
 
         expired_keys = [
-            key for key, timestamp in self.cache_timestamps.items()
-            if now - timestamp > ttl
+            key for key, timestamp in self.cache_timestamps.items() if now - timestamp > ttl
         ]
 
         for key in expired_keys:
@@ -711,7 +726,7 @@ class VoicePersonalityIntegration:
             self.cache_timestamps.pop(key, None)
 
     def get_integration_stats(self) -> Dict[str, Any]:
-        """Get voice-personality integration statistics."""
+        """Get voice - personality integration statistics."""
 
         return {
             "voice_personality_stats": self.stats.copy(),
@@ -722,8 +737,8 @@ class VoicePersonalityIntegration:
                 "response_adaptation_enabled": self.config.enable_response_adaptation,
                 "personality_learning_enabled": self.config.enable_personality_learning,
                 "voice_traits_enabled": self.config.enable_voice_traits,
-                "adjustment_sensitivity": self.config.adjustment_sensitivity
-            }
+                "adjustment_sensitivity": self.config.adjustment_sensitivity,
+            },
         }
 
     async def cleanup(self) -> None:
@@ -745,7 +760,7 @@ class VoicePersonalityIntegration:
 
 class VoicePersonalityManager:
     """
-    High-level manager for voice-personality integration.
+    High - level manager for voice - personality integration.
 
     Provides a simplified interface for voice components to interact with personality.
     """
@@ -753,7 +768,7 @@ class VoicePersonalityManager:
     def __init__(
         self,
         personality_manager: PersonalityManagerInterface,
-        config: Optional[VoicePersonalityConfig] = None
+        config: Optional[VoicePersonalityConfig] = None,
     ):
         """Initialize voice personality manager."""
         self.personality_manager = personality_manager
@@ -763,9 +778,7 @@ class VoicePersonalityManager:
         logger.info("VoicePersonalityManager initialized")
 
     async def enhance_voice_context(
-        self,
-        voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        self, voice_message: VoiceMessage, conversation_state: Optional[ConversationState] = None
     ) -> Dict[str, Any]:
         """
         Enhance voice processing context with personality.
@@ -783,7 +796,7 @@ class VoicePersonalityManager:
         self,
         voice_response: VoiceResponse,
         voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        conversation_state: Optional[ConversationState] = None,
     ) -> VoiceResponse:
         """
         Adapt voice response based on personality.
@@ -794,16 +807,18 @@ class VoicePersonalityManager:
             conversation_state: Current conversation state
 
         Returns:
-            Personality-adapted voice response
+            Personality - adapted voice response
         """
-        return await self.integration.adapt_voice_response(voice_response, voice_message, conversation_state)
+        return await self.integration.adapt_voice_response(
+            voice_response, voice_message, conversation_state
+        )
 
     async def learn_from_interaction(
         self,
         voice_message: VoiceMessage,
         voice_response: VoiceResponse,
         conversation_state: Optional[ConversationState] = None,
-        user_feedback: Optional[Dict[str, Any]] = None
+        user_feedback: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Learn from voice interaction for personality evolution.

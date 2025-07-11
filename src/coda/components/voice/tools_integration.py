@@ -1,31 +1,37 @@
 """
-Voice-Tools Integration
+Voice - Tools Integration
 
 This module provides comprehensive integration between the voice processing system
 and the tools manager for function calling, tool discovery, and execution within
 voice conversations.
 """
 
-import asyncio
 import logging
-import json
 import time
-from typing import Dict, List, Any, Optional, Tuple, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from .models import VoiceMessage, VoiceResponse, ConversationState
+from .models import ConversationState, VoiceMessage, VoiceResponse
+
 try:
     from ..tools.interfaces import ToolManagerInterface
     from ..tools.models import (
-        ToolCall, ToolResult, ToolDefinition, ToolParameter,
-        ToolExecutionContext, ToolCallStatus
+        ToolCall,
+        ToolCallStatus,
+        ToolDefinition,
+        ToolExecutionContext,
+        ToolParameter,
+        ToolResult,
     )
 except ImportError:
     # Create mock interfaces for testing
     class ToolManagerInterface:
-        async def get_available_tools(self): pass
-        async def execute_tool(self, tool_call, context): pass
+        async def get_available_tools(self):
+            pass
+
+        async def execute_tool(self, tool_call, context):
+            pass
 
     class ToolDefinition:
         def __init__(self, name, description, parameters=None, category=None):
@@ -48,7 +54,9 @@ except ImportError:
             self.parameters = parameters
 
     class ToolResult:
-        def __init__(self, call_id, tool_name, status, result=None, error=None, execution_time_ms=0.0):
+        def __init__(
+            self, call_id, tool_name, status, result=None, error=None, execution_time_ms=0.0
+        ):
             self.call_id = call_id
             self.tool_name = tool_name
             self.status = status
@@ -67,12 +75,13 @@ except ImportError:
             self.message_id = message_id
             self.source = source
 
+
 logger = logging.getLogger("coda.voice.tools_integration")
 
 
 @dataclass
 class VoiceToolsConfig:
-    """Configuration for voice-tools integration."""
+    """Configuration for voice - tools integration."""
 
     # Tool discovery and injection
     enable_tool_injection: bool = True
@@ -84,10 +93,10 @@ class VoiceToolsConfig:
     # Function calling
     enable_function_calling: bool = True
     auto_execute_tools: bool = True
-    require_confirmation: bool = False  # For voice, auto-execute is usually preferred
+    require_confirmation: bool = False  # For voice, auto - execute is usually preferred
     max_execution_time_seconds: float = 30.0
 
-    # Voice-specific features
+    # Voice - specific features
     enable_voice_tool_feedback: bool = True
     provide_execution_status: bool = True
     explain_tool_usage: bool = True
@@ -109,18 +118,14 @@ class VoiceToolsIntegration:
 
     Features:
     - Automatic tool discovery and injection
-    - Voice-triggered function calling
+    - Voice - triggered function calling
     - Tool execution with voice feedback
     - Tool usage learning and adaptation
     - Performance optimization with caching
     """
 
-    def __init__(
-        self,
-        tool_manager: ToolManagerInterface,
-        config: VoiceToolsConfig
-    ):
-        """Initialize voice-tools integration."""
+    def __init__(self, tool_manager: ToolManagerInterface, config: VoiceToolsConfig):
+        """Initialize voice - tools integration."""
         self.tool_manager = tool_manager
         self.config = config
 
@@ -135,7 +140,7 @@ class VoiceToolsIntegration:
             "successful_executions": 0,
             "failed_executions": 0,
             "cache_hits": 0,
-            "tools_discovered": 0
+            "tools_discovered": 0,
         }
 
         # Tool usage tracking
@@ -145,9 +150,7 @@ class VoiceToolsIntegration:
         logger.info("VoiceToolsIntegration initialized")
 
     async def enhance_voice_context(
-        self,
-        voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        self, voice_message: VoiceMessage, conversation_state: Optional[ConversationState] = None
     ) -> Dict[str, Any]:
         """
         Enhance voice processing context with relevant tools.
@@ -188,7 +191,7 @@ class VoiceToolsIntegration:
         self,
         voice_message: VoiceMessage,
         voice_response: VoiceResponse,
-        conversation_state: Optional[ConversationState] = None
+        conversation_state: Optional[ConversationState] = None,
     ) -> Tuple[VoiceResponse, List[ToolResult]]:
         """
         Process function calls detected in voice conversation.
@@ -238,11 +241,13 @@ class VoiceToolsIntegration:
                         status=ToolCallStatus.FAILED,
                         result=None,
                         error=str(e),
-                        execution_time_ms=0.0
+                        execution_time_ms=0.0,
                     )
                     tool_results.append(error_result)
 
-                    execution_summaries.append(f"Failed to execute {function_call.get('name', 'tool')}: {e}")
+                    execution_summaries.append(
+                        f"Failed to execute {function_call.get('name', 'tool')}: {e}"
+                    )
                     self.stats["failed_executions"] += 1
 
             # Update voice response with tool execution results
@@ -281,33 +286,37 @@ class VoiceToolsIntegration:
                         "name": tool.name,
                         "description": tool.description,
                         "relevance_score": relevance_score,
-                        "parameters": [
-                            {
-                                "name": param.name,
-                                "type": param.type,
-                                "description": param.description,
-                                "required": param.required
-                            }
-                            for param in tool.parameters
-                        ] if self.config.include_tool_descriptions else []
+                        "parameters": (
+                            [
+                                {
+                                    "name": param.name,
+                                    "type": param.type,
+                                    "description": param.description,
+                                    "required": param.required,
+                                }
+                                for param in tool.parameters
+                            ]
+                            if self.config.include_tool_descriptions
+                            else []
+                        ),
                     }
 
                     # Add examples if enabled
-                    if self.config.include_tool_examples and hasattr(tool, 'examples'):
+                    if self.config.include_tool_examples and hasattr(tool, "examples"):
                         tool_info["examples"] = tool.examples[:2]  # Limit to 2 examples
 
                     relevant_tools.append(tool_info)
 
             # Sort by relevance and limit
             relevant_tools.sort(key=lambda t: t["relevance_score"], reverse=True)
-            relevant_tools = relevant_tools[:self.config.max_tools_in_context]
+            relevant_tools = relevant_tools[: self.config.max_tools_in_context]
 
             # Create tools context
             tools_context = {
                 "available_tools": relevant_tools,
                 "tool_count": len(relevant_tools),
                 "discovery_query": text_content,
-                "tools_summary": self._generate_tools_summary(relevant_tools)
+                "tools_summary": self._generate_tools_summary(relevant_tools),
             }
 
             self.stats["tools_discovered"] += len(relevant_tools)
@@ -324,12 +333,12 @@ class VoiceToolsIntegration:
         """Calculate relevance score between tool and text content."""
 
         try:
-            # Simple keyword-based relevance (in real implementation, use embeddings)
+            # Simple keyword - based relevance (in real implementation, use embeddings)
             text_lower = text_content.lower()
             tool_keywords = []
 
             # Extract keywords from tool name and description
-            tool_keywords.extend(tool.name.lower().split('_'))
+            tool_keywords.extend(tool.name.lower().split("_"))
             tool_keywords.extend(tool.description.lower().split())
 
             # Calculate keyword overlap
@@ -348,12 +357,12 @@ class VoiceToolsIntegration:
                 relevance += 0.3
 
             # Boost for category matches
-            if hasattr(tool, 'category'):
+            if hasattr(tool, "category"):
                 category_keywords = {
-                    'file': ['file', 'document', 'save', 'read', 'write'],
-                    'web': ['search', 'browse', 'url', 'website', 'internet'],
-                    'calculation': ['calculate', 'math', 'compute', 'number'],
-                    'system': ['system', 'process', 'run', 'execute']
+                    "file": ["file", "document", "save", "read", "write"],
+                    "web": ["search", "browse", "url", "website", "internet"],
+                    "calculation": ["calculate", "math", "compute", "number"],
+                    "system": ["system", "process", "run", "execute"],
                 }
 
                 if tool.category in category_keywords:
@@ -397,7 +406,7 @@ class VoiceToolsIntegration:
             import re
 
             # Pattern: function_name(param1=value1, param2=value2)
-            pattern = r'(\w+)\s*\(\s*([^)]*)\s*\)'
+            pattern = r"(\w+)\s*\(\s*([^)]*)\s*\)"
             matches = re.findall(pattern, text_content)
 
             for i, (func_name, params_str) in enumerate(matches):
@@ -405,16 +414,16 @@ class VoiceToolsIntegration:
                 parameters = {}
                 if params_str.strip():
                     # Simple parameter parsing
-                    param_pairs = params_str.split(',')
+                    param_pairs = params_str.split(",")
                     for pair in param_pairs:
-                        if '=' in pair:
-                            key, value = pair.split('=', 1)
-                            parameters[key.strip()] = value.strip().strip('"\'')
+                        if "=" in pair:
+                            key, value = pair.split("=", 1)
+                            parameters[key.strip()] = value.strip().strip("\"'")
 
                 function_call = {
                     "call_id": f"call_{voice_response.response_id}_{i}",
                     "name": func_name,
-                    "parameters": parameters
+                    "parameters": parameters,
                 }
 
                 function_calls.append(function_call)
@@ -428,9 +437,7 @@ class VoiceToolsIntegration:
             return []
 
     async def _execute_function_call(
-        self,
-        function_call: Dict[str, Any],
-        voice_message: VoiceMessage
+        self, function_call: Dict[str, Any], voice_message: VoiceMessage
     ) -> ToolResult:
         """Execute a function call."""
 
@@ -441,7 +448,7 @@ class VoiceToolsIntegration:
             tool_call = ToolCall(
                 call_id=function_call["call_id"],
                 tool_name=function_call["name"],
-                parameters=function_call["parameters"]
+                parameters=function_call["parameters"],
             )
 
             # Create execution context
@@ -449,7 +456,7 @@ class VoiceToolsIntegration:
                 user_id="voice_user",  # This would come from conversation state
                 conversation_id=voice_message.conversation_id,
                 message_id=voice_message.message_id,
-                source="voice_interaction"
+                source="voice_interaction",
             )
 
             # Execute the tool
@@ -472,15 +479,13 @@ class VoiceToolsIntegration:
                 status=ToolCallStatus.FAILED,
                 result=None,
                 error=str(e),
-                execution_time_ms=execution_time
+                execution_time_ms=execution_time,
             )
 
     async def _generate_execution_summary(
-        self,
-        function_call: Dict[str, Any],
-        result: ToolResult
+        self, function_call: Dict[str, Any], result: ToolResult
     ) -> str:
-        """Generate a voice-friendly summary of tool execution."""
+        """Generate a voice - friendly summary of tool execution."""
 
         try:
             tool_name = function_call["name"]
@@ -513,7 +518,7 @@ class VoiceToolsIntegration:
         self,
         voice_response: VoiceResponse,
         tool_results: List[ToolResult],
-        execution_summaries: List[str]
+        execution_summaries: List[str],
     ) -> VoiceResponse:
         """Update voice response with tool execution results."""
 
@@ -538,7 +543,7 @@ class VoiceToolsIntegration:
                 total_latency_ms=voice_response.total_latency_ms,
                 moshi_latency_ms=voice_response.moshi_latency_ms,
                 llm_latency_ms=voice_response.llm_latency_ms,
-                response_relevance=voice_response.response_relevance
+                response_relevance=voice_response.response_relevance,
             )
 
             return updated_response
@@ -551,7 +556,7 @@ class VoiceToolsIntegration:
         self,
         voice_message: VoiceMessage,
         function_calls: List[Dict[str, Any]],
-        tool_results: List[ToolResult]
+        tool_results: List[ToolResult],
     ) -> None:
         """Track tool usage patterns for learning."""
 
@@ -578,7 +583,11 @@ class VoiceToolsIntegration:
                     "conversation_id": conversation_id,
                     "user_message": voice_message.text_content or "",
                     "parameters": function_call["parameters"],
-                    "success": any(r.status == ToolCallStatus.SUCCESS for r in tool_results if r.tool_name == tool_name)
+                    "success": any(
+                        r.status == ToolCallStatus.SUCCESS
+                        for r in tool_results
+                        if r.tool_name == tool_name
+                    ),
                 }
 
                 self.tool_usage_patterns[tool_name].append(usage_entry)
@@ -621,8 +630,7 @@ class VoiceToolsIntegration:
         ttl = timedelta(minutes=self.config.tool_cache_ttl_minutes)
 
         expired_keys = [
-            key for key, timestamp in self.cache_timestamps.items()
-            if now - timestamp > ttl
+            key for key, timestamp in self.cache_timestamps.items() if now - timestamp > ttl
         ]
 
         for key in expired_keys:
@@ -630,9 +638,7 @@ class VoiceToolsIntegration:
             self.cache_timestamps.pop(key, None)
 
     async def get_tool_suggestions(
-        self,
-        voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        self, voice_message: VoiceMessage, conversation_state: Optional[ConversationState] = None
     ) -> List[Dict[str, Any]]:
         """Get tool suggestions based on voice message and usage patterns."""
 
@@ -659,8 +665,9 @@ class VoiceToolsIntegration:
                 # Boost score based on usage patterns
                 if tool.name in self.tool_usage_patterns:
                     usage_patterns = self.tool_usage_patterns[tool.name]
-                    recent_usage = len([p for p in usage_patterns if
-                                     (datetime.now() - p["timestamp"]).days < 7])
+                    recent_usage = len(
+                        [p for p in usage_patterns if (datetime.now() - p["timestamp"]).days < 7]
+                    )
 
                     if recent_usage > 0:
                         relevance_score += min(0.3, recent_usage * 0.1)
@@ -671,7 +678,7 @@ class VoiceToolsIntegration:
                         "description": tool.description,
                         "relevance_score": relevance_score,
                         "usage_count": len(self.tool_usage_patterns.get(tool.name, [])),
-                        "recently_used": tool.name in conversation_tools
+                        "recently_used": tool.name in conversation_tools,
                     }
                     suggestions.append(suggestion)
 
@@ -685,7 +692,7 @@ class VoiceToolsIntegration:
             return []
 
     def get_integration_stats(self) -> Dict[str, Any]:
-        """Get voice-tools integration statistics."""
+        """Get voice - tools integration statistics."""
 
         return {
             "voice_tools_stats": self.stats.copy(),
@@ -697,8 +704,8 @@ class VoiceToolsIntegration:
                 "function_calling_enabled": self.config.enable_function_calling,
                 "auto_execute_tools": self.config.auto_execute_tools,
                 "max_tools_in_context": self.config.max_tools_in_context,
-                "tool_relevance_threshold": self.config.tool_relevance_threshold
-            }
+                "tool_relevance_threshold": self.config.tool_relevance_threshold,
+            },
         }
 
     async def cleanup(self) -> None:
@@ -721,15 +728,13 @@ class VoiceToolsIntegration:
 
 class VoiceToolsManager:
     """
-    High-level manager for voice-tools integration.
+    High - level manager for voice - tools integration.
 
     Provides a simplified interface for voice components to interact with tools.
     """
 
     def __init__(
-        self,
-        tool_manager: ToolManagerInterface,
-        config: Optional[VoiceToolsConfig] = None
+        self, tool_manager: ToolManagerInterface, config: Optional[VoiceToolsConfig] = None
     ):
         """Initialize voice tools manager."""
         self.tool_manager = tool_manager
@@ -739,9 +744,7 @@ class VoiceToolsManager:
         logger.info("VoiceToolsManager initialized")
 
     async def enhance_voice_context(
-        self,
-        voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        self, voice_message: VoiceMessage, conversation_state: Optional[ConversationState] = None
     ) -> Dict[str, Any]:
         """
         Enhance voice processing context with tools.
@@ -759,7 +762,7 @@ class VoiceToolsManager:
         self,
         voice_message: VoiceMessage,
         voice_response: VoiceResponse,
-        conversation_state: Optional[ConversationState] = None
+        conversation_state: Optional[ConversationState] = None,
     ) -> Tuple[VoiceResponse, List[ToolResult]]:
         """
         Process voice interaction with tool execution.
@@ -777,9 +780,7 @@ class VoiceToolsManager:
         )
 
     async def get_tool_suggestions(
-        self,
-        voice_message: VoiceMessage,
-        conversation_state: Optional[ConversationState] = None
+        self, voice_message: VoiceMessage, conversation_state: Optional[ConversationState] = None
     ) -> List[Dict[str, Any]]:
         """
         Get tool suggestions for voice message.

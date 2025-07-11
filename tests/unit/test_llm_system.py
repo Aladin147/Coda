@@ -502,11 +502,12 @@ class TestLLMManager:
     @pytest.fixture
     def llm_manager(self, llm_config):
         manager = LLMManager(llm_config)
-        
-        # Replace provider with mock
+
+        # Replace provider with mock after initialization
         mock_provider = MockLLMProvider(llm_config.providers["mock"])
         manager._providers["mock"] = mock_provider
-        
+        manager._default_provider = "mock"  # Ensure mock is the default
+
         return manager
     
     async def test_generate_response(self, llm_manager):

@@ -1,84 +1,430 @@
 # Voice Processing API Reference
 
+## Overview
+
+The Coda Voice Processing System provides a comprehensive API for real-time voice conversation processing, combining Kyutai Moshi for fast speech-to-speech processing with external LLMs for enhanced reasoning capabilities.
+
 ## Core Classes
 
-### VoiceProcessor
+### VoiceManager
 
-Main voice processing orchestrator that coordinates all voice operations.
+Main voice manager that orchestrates all voice processing components and integrations.
 
 ```python
-class VoiceProcessor:
-    def __init__(self, config: VoiceProcessingConfig)
-    
-    async def start() -> None
-    async def stop() -> None
-    
+class VoiceManager(VoiceManagerInterface):
+    """
+    Main voice manager for orchestrating voice processing.
+
+    The VoiceManager coordinates between different processing modes (Moshi-only,
+    LLM-enhanced, hybrid) and manages integrations with memory, personality,
+    and tools systems.
+
+    Args:
+        config: Voice configuration object. If None, loads development config.
+
+    Example:
+        >>> from src.coda.components.voice import VoiceManager
+        >>> manager = VoiceManager()
+        >>> await manager.initialize()
+        >>> response = await manager.process_voice_message(voice_message)
+    """
+
+    def __init__(self, config: Optional[VoiceConfig] = None) -> None:
+        """Initialize voice manager with configuration."""
+
+    async def initialize(self) -> None:
+        """
+        Initialize all voice processing components.
+
+        This method must be called before processing any voice messages.
+        It initializes VRAM management, audio processing, and integration components.
+
+        Raises:
+            VoiceInitializationError: If initialization fails
+            VRAMAllocationError: If VRAM allocation fails
+        """
+
+    async def cleanup(self) -> None:
+        """
+        Clean up all resources and stop processing.
+
+        This method should be called when shutting down to ensure
+        proper cleanup of VRAM, audio resources, and background threads.
+        """
+
     async def process_voice_message(
-        self, 
+        self,
         voice_message: VoiceMessage,
-        mode: Optional[VoiceProcessingMode] = None
-    ) -> VoiceResponse
-    
+        mode: Optional[VoiceProcessingMode] = None,
+        context: Optional[Dict[str, Any]] = None
+    ) -> VoiceResponse:
+        """
+        Process a voice message and return a response.
+
+        Args:
+            voice_message: The voice message to process
+            mode: Processing mode (adaptive, moshi_only, llm_enhanced, hybrid)
+            context: Additional context for processing
+
+        Returns:
+            VoiceResponse containing the processed response
+
+        Raises:
+            VoiceProcessingError: If processing fails
+            ValidationError: If voice message is invalid
+            TimeoutError: If processing exceeds timeout
+
+        Example:
+            >>> voice_msg = VoiceMessage(
+            ...     conversation_id="conv_123",
+            ...     audio_data=audio_bytes,
+            ...     text_content="Hello, how are you?"
+            ... )
+            >>> response = await manager.process_voice_message(voice_msg)
+            >>> print(response.text_content)
+        """
+
     async def process_streaming(
         self,
-        voice_message: VoiceMessage
-    ) -> AsyncGenerator[VoiceResponse, None]
-    
-    async def process_with_integrations(
-        self,
         voice_message: VoiceMessage,
-        include_memory: bool = True,
-        include_personality: bool = True,
-        include_tools: bool = True
-    ) -> VoiceResponse
-```
+        mode: Optional[VoiceProcessingMode] = None
+    ) -> AsyncGenerator[VoiceStreamChunk, None]:
+        """
+        Process voice message with streaming response.
+
+        Args:
+            voice_message: The voice message to process
+            mode: Processing mode for streaming
+
+        Yields:
+            VoiceStreamChunk: Incremental response chunks
+
+        Example:
+            >>> async for chunk in manager.process_streaming(voice_msg):
+            ...     print(chunk.text_content)
+            ...     if chunk.audio_data:
+            ...         play_audio(chunk.audio_data)
+        """
+
+    async def start_conversation(self, conversation_id: str) -> ConversationState:
+        """
+        Start a new voice conversation.
+
+        Args:
+            conversation_id: Unique identifier for the conversation
+
+        Returns:
+            ConversationState: Initial conversation state
+
+        Raises:
+            ValidationError: If conversation_id is invalid
+            ConversationError: If conversation already exists
+        """
+
+    async def end_conversation(self, conversation_id: str) -> None:
+        """
+        End an active voice conversation.
+
+        Args:
+            conversation_id: Conversation to end
+
+        Raises:
+            ConversationError: If conversation not found
+        """
 
 ### VoiceMessage
 
-Represents a user voice input message.
+Represents a user voice input message with audio data and metadata.
 
 ```python
 @dataclass
 class VoiceMessage:
-    message_id: str
+    """
+    Voice message containing audio data and processing metadata.
+
+    This class encapsulates all information needed to process a voice input,
+    including the audio data, conversation context, and processing preferences.
+
+    Attributes:
+        conversation_id: Unique identifier for the conversation
+        audio_data: Raw audio data in bytes (WAV format preferred)
+        text_content: Optional transcribed text content
+        timestamp: When the message was created
+        speaker: Speaker identifier (default: "user")
+        processing_mode: Preferred processing mode
+        metadata: Additional metadata for processing
+
+    Example:
+        >>> voice_msg = VoiceMessage(
+        ...     conversation_id="conv_123",
+        ...     audio_data=wav_audio_bytes,
+        ...     text_content="What's the weather like?",
+        ...     speaker="user"
+        ... )
+    """
+
     conversation_id: str
     audio_data: bytes
     text_content: Optional[str] = None
+    timestamp: float = field(default_factory=time.time)
+    speaker: str = "user"
     processing_mode: VoiceProcessingMode = VoiceProcessingMode.ADAPTIVE
-    timestamp: datetime = field(default_factory=datetime.now)
-    
-    # Audio metadata
-    sample_rate: int = 24000
-    channels: int = 1
-    audio_duration_ms: Optional[float] = None
-    
-    # Processing metadata
-    confidence_score: Optional[float] = None
-    language: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    # Audio metadata (auto-populated during validation)
+    sample_rate: Optional[int] = None
+    channels: Optional[int] = None
+    duration_seconds: Optional[float] = None
+    format: Optional[str] = None
+
+    def validate(self) -> None:
+        """
+        Validate the voice message data.
+
+        Raises:
+            ValidationError: If message data is invalid
+        """
+
+    def get_audio_metadata(self) -> Dict[str, Any]:
+        """
+        Get audio metadata from the audio data.
+
+        Returns:
+            Dictionary containing audio format information
+        """
 ```
 
 ### VoiceResponse
 
-Represents an assistant voice response.
+Represents a processed voice response with audio and text content.
 
 ```python
 @dataclass
 class VoiceResponse:
-    response_id: str
+    """
+    Voice response containing processed audio and text.
+
+    This class encapsulates the result of voice processing, including
+    generated audio, text content, and processing metadata.
+
+    Attributes:
+        conversation_id: Conversation this response belongs to
+        text_content: Generated text response
+        audio_data: Generated audio response (optional)
+        timestamp: When the response was generated
+        processing_time: Time taken to process (milliseconds)
+        confidence_score: Confidence in the response quality (0.0-1.0)
+        processing_mode: Mode used for processing
+        metadata: Additional response metadata
+
+    Example:
+        >>> response = VoiceResponse(
+        ...     conversation_id="conv_123",
+        ...     text_content="The weather is sunny today.",
+        ...     audio_data=generated_audio_bytes,
+        ...     confidence_score=0.95
+        ... )
+    """
+
     conversation_id: str
-    message_id: str
-    text_content: Optional[str] = None
-    audio_data: bytes = b""
-    processing_mode: VoiceProcessingMode
-    
-    # Performance metrics
-    total_latency_ms: float = 0.0
-    moshi_latency_ms: Optional[float] = None
-    llm_latency_ms: Optional[float] = None
-    
-    # Quality metrics
-    response_relevance: Optional[float] = None
+    text_content: str
+    audio_data: Optional[bytes] = None
+    timestamp: float = field(default_factory=time.time)
+    processing_time: Optional[float] = None
+    confidence_score: Optional[float] = None
+    processing_mode: Optional[VoiceProcessingMode] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    # Response quality metrics
+    relevance_score: Optional[float] = None
+    coherence_score: Optional[float] = None
+    audio_quality_score: Optional[float] = None
+
+    def is_high_quality(self, threshold: float = 0.8) -> bool:
+        """
+        Check if response meets quality threshold.
+
+        Args:
+            threshold: Quality threshold (0.0-1.0)
+
+        Returns:
+            True if response quality is above threshold
+        """
+
+    def get_quality_metrics(self) -> Dict[str, float]:
+        """
+        Get all quality metrics for the response.
+
+        Returns:
+            Dictionary of quality metrics
+        """
+
+## Processing Modes
+
+### VoiceProcessingMode
+
+Enumeration of available voice processing modes.
+
+```python
+class VoiceProcessingMode(str, Enum):
+    """
+    Voice processing modes for different use cases.
+
+    Each mode provides different trade-offs between speed, quality, and capabilities:
+
+    - MOSHI_ONLY: Fastest, uses only Moshi for speech-to-speech
+    - LLM_ENHANCED: Highest quality, uses external LLM for reasoning
+    - HYBRID: Balanced, uses both Moshi and LLM in parallel
+    - ADAPTIVE: Intelligent, automatically selects best mode based on context
+    """
+
+    MOSHI_ONLY = "moshi_only"
+    """
+    Use only Moshi for processing.
+
+    Characteristics:
+    - Fastest response time (100-200ms)
+    - Natural speech patterns
+    - Limited reasoning capabilities
+    - Best for: Simple conversations, quick responses
+    """
+
+    LLM_ENHANCED = "llm_enhanced"
+    """
+    Use external LLM for enhanced reasoning.
+
+    Characteristics:
+    - Slower response time (500-1500ms)
+    - Advanced reasoning and knowledge
+    - Text-to-speech conversion required
+    - Best for: Complex questions, analysis, creative tasks
+    """
+
+    HYBRID = "hybrid"
+    """
+    Use both Moshi and LLM in parallel, select best response.
+
+    Characteristics:
+    - Moderate response time (200-800ms)
+    - Quality-based response selection
+    - Fallback capabilities
+    - Best for: Balanced conversations requiring both speed and quality
+    """
+
+    ADAPTIVE = "adaptive"
+    """
+    Automatically select optimal mode based on context.
+
+    Characteristics:
+    - Variable response time based on selected mode
+    - Context-aware mode selection
+    - Learning from conversation patterns
+    - Best for: General conversations, production use
+    """
 ```
+
+## Configuration Classes
+
+### VoiceConfig
+
+Main configuration class for the voice processing system.
+
+```python
+@dataclass
+class VoiceConfig:
+    """
+    Comprehensive configuration for voice processing system.
+
+    This class contains all configuration options for audio processing,
+    model settings, performance tuning, and integration settings.
+
+    Example:
+        >>> config = VoiceConfig(
+        ...     audio=AudioConfig(sample_rate=24000),
+        ...     moshi=MoshiConfig(device="cuda"),
+        ...     llm=LLMConfig(provider="ollama")
+        ... )
+    """
+
+    # Core configuration
+    audio: AudioConfig
+    moshi: MoshiConfig
+    llm: Optional[LLMConfig] = None
+
+    # Processing settings
+    default_mode: VoiceProcessingMode = VoiceProcessingMode.ADAPTIVE
+    enable_streaming: bool = True
+    max_conversation_length: int = 100
+
+    # Performance settings
+    enable_caching: bool = True
+    enable_optimization: bool = True
+    max_concurrent_conversations: int = 10
+
+    # Integration settings
+    enable_memory_integration: bool = True
+    enable_personality_integration: bool = True
+    enable_tools_integration: bool = True
+
+    # Monitoring and logging
+    enable_analytics: bool = True
+    log_level: str = "INFO"
+    metrics_enabled: bool = True
+```
+
+### AudioConfig
+
+Configuration for audio processing settings.
+
+```python
+@dataclass
+class AudioConfig:
+    """
+    Audio processing configuration.
+
+    Defines audio format, quality settings, and processing options.
+
+    Attributes:
+        sample_rate: Audio sample rate in Hz (16000, 24000, 44100, 48000)
+        channels: Number of audio channels (1=mono, 2=stereo)
+        format: Audio format ("wav", "mp3", "flac")
+        bit_depth: Audio bit depth (16, 24, 32)
+        enable_vad: Enable Voice Activity Detection
+        enable_noise_reduction: Enable noise reduction
+        enable_echo_cancellation: Enable echo cancellation
+
+    Example:
+        >>> audio_config = AudioConfig(
+        ...     sample_rate=24000,
+        ...     channels=1,
+        ...     format="wav",
+        ...     enable_vad=True
+        ... )
+    """
+
+    sample_rate: int = 24000
+    channels: int = 1
+    format: str = "wav"
+    bit_depth: int = 16
+
+    # Audio processing features
+    enable_vad: bool = True
+    enable_noise_reduction: bool = True
+    enable_echo_cancellation: bool = True
+    enable_auto_gain_control: bool = True
+
+    # Quality settings
+    vad_threshold: float = 0.5
+    noise_reduction_level: float = 0.7
+    max_audio_length_seconds: float = 30.0
+
+    def validate(self) -> None:
+        """
+        Validate audio configuration.
+
+        Raises:
+            ConfigurationError: If configuration is invalid
+        """
 
 ## Integration Classes
 

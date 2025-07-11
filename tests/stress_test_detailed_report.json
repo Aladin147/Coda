@@ -1,0 +1,65 @@
+{
+  "summary": {
+    "total_tests": 5,
+    "passed_tests": 1,
+    "failed_tests": 4,
+    "success_rate": 20.0
+  },
+  "detailed_results": [
+    {
+      "test": "concurrent_sessions",
+      "success": false,
+      "error": "unhashable type: 'list'"
+    },
+    {
+      "test": "high_volume_messages",
+      "messages_processed": 0,
+      "errors": 195,
+      "error_rate": 1.0,
+      "avg_response_time": 0,
+      "max_response_time": 0,
+      "min_response_time": 0,
+      "total_time": 30.047078371047974,
+      "messages_per_second": 0.0,
+      "peak_memory_mb": 790.578125,
+      "peak_cpu": 43.0,
+      "success": false
+    },
+    {
+      "test": "memory_pressure",
+      "sessions_created": 25,
+      "total_messages": 3750,
+      "avg_retrieval_time": 0.0,
+      "max_retrieval_time": 0.0,
+      "total_time": 11.966006517410278,
+      "peak_memory_mb": 848.3515625,
+      "peak_cpu": 117.6,
+      "success": true
+    },
+    {
+      "test": "event_system_overload",
+      "success": false,
+      "error": "object NoneType can't be used in 'await' expression"
+    },
+    {
+      "test": "concurrent_component_operations",
+      "total_operations": 30,
+      "successful_operations": 16,
+      "failed_operations": 14,
+      "success_rate": 0.5333333333333333,
+      "errors": [
+        "Response generation failed: Unexpected error: catching classes that do not inherit from BaseException is not allowed",
+        "Response generation failed: Unexpected error: catching classes that do not inherit from BaseException is not allowed",
+        "Response generation failed: Unexpected error: catching classes that do not inherit from BaseException is not allowed",
+        "Response generation failed: Unexpected error: catching classes that do not inherit from BaseException is not allowed",
+        "Response generation failed: Unexpected error: catching classes that do not inherit from BaseException is not allowed"
+      ],
+      "total_time": 69.30394053459167,
+      "ops_per_second": 0.4328758187281732,
+      "peak_memory_mb": 1705.71875,
+      "peak_cpu": 3139.2,
+      "success": false
+    }
+  ],
+  "timestamp": 1752173253.9555469
+}

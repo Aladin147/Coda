@@ -4,21 +4,19 @@ audio:
   channels: 1
   chunk_size: 1024
   echo_cancellation: false
-  format: !!python/object/apply:src.coda.components.voice.models.AudioFormat
-  - wav
+  format: "wav"
   noise_reduction: false
   sample_rate: 24000
   silence_duration_ms: 1000
   vad_enabled: true
   vad_threshold: 0.3
-conversation_mode: !!python/object/apply:src.coda.components.voice.models.ConversationMode
-- turn_based
+conversation_mode: "turn_based"
 dynamic_allocation: true
 enable_traditional_pipeline: false
 external_llm:
   context_window: 8192
   fallback_enabled: true
-  model: llama3.1:8b-instruct-q4_K_M
+  model: qwen3:30b-a3b
   parallel_processing: false
   provider: ollama
   reasoning_mode: basic
@@ -27,8 +25,7 @@ external_llm:
 fallback_tts_model: xtts_v2
 fallback_whisper_model: large-v3
 memory_integration_enabled: false
-mode: !!python/object/apply:src.coda.components.voice.models.VoiceProcessingMode
-- moshi_only
+mode: "moshi_only"
 moshi:
   device: cuda
   enable_streaming: true

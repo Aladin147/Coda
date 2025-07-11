@@ -8,12 +8,13 @@ for the WebSocket interface.
 import asyncio
 import logging
 import time
-import psutil
-from typing import Dict, Any, Optional
 from contextlib import asynccontextmanager
+from typing import Any, Dict, Optional
 
-from .server import CodaWebSocketServer
+import psutil
+
 from .events import EventType
+from .server import CodaWebSocketServer
 
 logger = logging.getLogger("coda.websocket.performance")
 
@@ -112,6 +113,7 @@ class SystemMetricsCollector:
         """Get GPU memory usage in MB (if available)."""
         try:
             import torch
+
             if torch.cuda.is_available():
                 memory_allocated = torch.cuda.memory_allocated() / 1024 / 1024
                 return memory_allocated
@@ -138,7 +140,7 @@ class SystemMetricsCollector:
 class WebSocketPerfIntegration:
     """
     Integration between performance tracking and the WebSocket server.
-    
+
     This class provides methods to connect performance monitoring to the WebSocket server,
     allowing clients to receive real-time performance metrics.
     """
@@ -190,21 +192,26 @@ class WebSocketPerfIntegration:
             try:
                 # Collect system metrics
                 metrics = self.metrics_collector.get_all_metrics()
-                
+
                 # Broadcast system metrics
                 await self.server.broadcast_system_metrics(**metrics)
-                
+
                 # Wait for next interval
                 await asyncio.sleep(self.metrics_interval)
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Error in metrics loop: {e}")
                 await asyncio.sleep(1.0)  # Brief pause before retrying
 
-    async def track_operation(self, component: str, operation: str, duration_ms: float, 
-                             metadata: Optional[Dict[str, Any]] = None) -> None:
+    async def track_operation(
+        self,
+        component: str,
+        operation: str,
+        duration_ms: float,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """
         Track an operation's performance.
 
@@ -216,7 +223,7 @@ class WebSocketPerfIntegration:
         """
         # Record in performance tracker
         self.performance_tracker.timings[f"{component}.{operation}"] = duration_ms / 1000.0
-        
+
         # Broadcast latency trace event
         await self.server.broadcast_event(
             EventType.LATENCY_TRACE,
@@ -225,7 +232,7 @@ class WebSocketPerfIntegration:
                 "operation": operation,
                 "duration_ms": duration_ms,
                 "metadata": metadata,
-            }
+            },
         )
 
     async def track_component_timings(self, component: str, timings: Dict[str, float]) -> None:
@@ -242,13 +249,13 @@ class WebSocketPerfIntegration:
 
         # Broadcast component timing event
         await self.server.broadcast_event(
-            EventType.COMPONENT_TIMING,
-            {"component": component, "timings": timings}
+            EventType.COMPONENT_TIMING, {"component": component, "timings": timings}
         )
 
     @asynccontextmanager
-    async def time_operation(self, component: str, operation: str, 
-                           metadata: Optional[Dict[str, Any]] = None):
+    async def time_operation(
+        self, component: str, operation: str, metadata: Optional[Dict[str, Any]] = None
+    ):
         """
         Context manager for timing operations with automatic WebSocket reporting.
 
@@ -276,10 +283,12 @@ class WebSocketPerfIntegration:
     async def broadcast_performance_summary(self) -> None:
         """Broadcast a performance summary to all clients."""
         summary = self.get_performance_summary()
-        await self.server.broadcast_system_info({
-            "event": "performance_summary",
-            "data": summary,
-        })
+        await self.server.broadcast_system_info(
+            {
+                "event": "performance_summary",
+                "data": summary,
+            }
+        )
 
     def increment_counter(self, counter: str, amount: int = 1) -> None:
         """Increment a performance counter."""
@@ -293,18 +302,27 @@ class WebSocketPerfIntegration:
 
 # Convenience decorators for performance tracking
 
-def track_async_operation(perf_integration: WebSocketPerfIntegration, component: str, operation: str):
+
+def track_async_operation(
+    perf_integration: WebSocketPerfIntegration, component: str, operation: str
+):
     """Decorator for tracking async operations."""
+
     def decorator(func):
         async def wrapper(*args, **kwargs):
             async with perf_integration.time_operation(component, operation):
                 return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
-def track_sync_operation(perf_integration: WebSocketPerfIntegration, component: str, operation: str):
+def track_sync_operation(
+    perf_integration: WebSocketPerfIntegration, component: str, operation: str
+):
     """Decorator for tracking synchronous operations."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             start_time = time.time()
@@ -316,5 +334,7 @@ def track_sync_operation(perf_integration: WebSocketPerfIntegration, component: 
                 asyncio.create_task(
                     perf_integration.track_operation(component, operation, duration_ms)
                 )
+
         return wrapper
+
     return decorator

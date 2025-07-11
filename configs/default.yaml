@@ -3,57 +3,74 @@
 
 # Voice processing configuration
 voice:
-  stt:
-    engine: "whisper"  # Options: whisper, kyutai (future)
-    model: "base"      # Options: tiny, base, small, medium, large
-    device: "cuda"     # Options: cpu, cuda
-    compute_type: "float16"  # Options: float32, float16, int8
-    language: "en"     # Language code or null for auto-detection
-    vad_filter: true   # Voice Activity Detection
-  
-  tts:
-    engine: "elevenlabs"  # Options: elevenlabs, kyutai (future)
-    voice_id: "21m00Tcm4TlvDq8ikWAM"  # ElevenLabs voice ID
-    model_id: "eleven_multilingual_v2"
-    stability: 0.5
-    similarity_boost: 0.75
-    style: 0.0
-    use_speaker_boost: true
+  mode: "moshi_only"
+  conversation_mode: "turn_based"
+  audio:
+    sample_rate: 16000
+    channels: 1
+    bit_depth: 16
+    chunk_size: 1024
+    format: "wav"
+    vad_enabled: true
+    vad_threshold: 0.5
+    silence_duration_ms: 1000
+    noise_reduction: true
+    echo_cancellation: true
+    auto_gain_control: true
+  moshi:
+    model_path: "kyutai/moshiko-pytorch-bf16"
+    device: "cuda"
+    optimization: "bf16"
+    max_conversation_length: 300
+    target_latency_ms: 200
+    vram_allocation: "8GB"
+    enable_streaming: true
+    external_llm_enabled: true
+    inner_monologue_enabled: true
+  external_llm:
+    provider: "ollama"
+    model: "qwen3:30b-a3b"
+    vram_allocation: "20GB"
+    reasoning_mode: "enhanced"
+    context_window: 8192
+    temperature: 0.7
+    parallel_processing: true
+    fallback_enabled: true
+  memory_integration_enabled: true
+  personality_integration_enabled: true
+  tools_integration_enabled: true
+  websocket_events_enabled: true
+  total_vram: "32GB"
+  reserved_system: "4GB"
+  dynamic_allocation: true
+  enable_traditional_pipeline: false
+  fallback_whisper_model: "large-v3"
+  fallback_tts_model: "xtts_v2"
 
 # Memory system configuration
 memory:
   short_term:
-    max_turns: 20      # Maximum conversation turns to keep
-    max_tokens: 800    # Maximum tokens for context
-  
+    max_turns: 20
+    max_tokens: 800
   long_term:
-    enabled: true      # Enable long-term memory
-    path: "data/memory/long_term"
-    vector_db: "chroma"  # Options: chroma, sqlite, in_memory
+    enabled: true
+    storage_path: "data/memory/long_term"
+    vector_db_type: "chroma"
     embedding_model: "all-MiniLM-L6-v2"
     max_memories: 1000
-    device: "cpu"      # Device for embedding model
-    
-    # Memory encoding settings
+    device: "cpu"
     chunk_size: 200
     chunk_overlap: 50
     min_chunk_length: 50
-    
-    # Persistence settings
+    time_decay_days: 30.0
     auto_persist: true
     persist_interval: 5
 
 # Personality engine configuration
 personality:
-  base_personality: "helpful"  # Base personality type
-  adaptation_enabled: true     # Enable learning from feedback
-  learning_rate: 0.1          # How quickly to adapt
-  lore_file: "configs/personality/lore.json"
-  
-  # Advanced features
-  behavioral_conditioning: true
-  topic_awareness: true
-  session_management: true
+  enabled: true
+  base_personality: "helpful_assistant"
+  adaptation_enabled: true
 
 # Tool system configuration
 tools:
@@ -67,12 +84,22 @@ tools:
     - "add_memory"
     - "list_tools"
     - "show_capabilities"
+  enabled_tools:
+    - "get_time"
+    - "get_date"
+    - "tell_joke"
+    - "get_weather"
+    - "search_memory"
+    - "add_memory"
+    - "list_tools"
+    - "show_capabilities"
 
 # Language model configuration
 llm:
-  model_name: "llama3"
-  host: "http://localhost:11434"
-  timeout: 120
+  provider: "ollama"
+  model: "qwen3:30b-a3b"
+  api_key: null
+  base_url: "http://localhost:11434"
   temperature: 0.7
   max_tokens: 256
 
@@ -97,12 +124,13 @@ audio:
 
 # WebSocket dashboard configuration
 dashboard:
-  enabled: false
+  enabled: true
   host: "localhost"
-  port: 8765
+  port: 8081
   cors_origins:
     - "http://localhost:3000"
     - "http://localhost:8080"
+    - "http://localhost:8081"
 
 # Logging configuration
 logging:
